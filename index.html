@@ -3,18 +3,17 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>MIDI Pads Pointer Lock MVP</title>
+<title>MIDI Pads MVP</title>
 <style>
   :root {
     --bg: #0b0c10;
-    --panel: rgba(15, 19, 27, 0.9);
+    --panel: #141821;
     --pad: #1f2430;
     --pad-active: #3fe0a6;
     --text: #e6e6e6;
     --muted: #97a1b3;
     --accent: #ffb347;
     --border: #2c3343;
-    --warning: #ff6b3d;
   }
   * { box-sizing: border-box; }
   html, body {
@@ -26,17 +25,50 @@
     font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
     overflow: hidden;
   }
+  .app {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 16px;
+  }
+  .top-bar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  button {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 10px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  button:hover { border-color: var(--accent); }
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 16px;
+    align-items: center;
+    width: min(920px, 96vw);
+  }
   .pad-surface {
-    position: fixed;
-    inset: 0;
+    width: min(70vh, 70vw, 520px);
+    aspect-ratio: 1 / 1;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: repeat(4, 1fr);
     gap: 10px;
-    padding: 12px;
-    background: linear-gradient(160deg, #0a0c12, #0f131b 60%, #0b0c10);
     touch-action: none;
-    cursor: crosshair;
   }
   .pad {
     background: var(--pad);
@@ -45,7 +77,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    font-size: 18px;
     color: var(--muted);
     user-select: none;
   }
@@ -53,83 +85,61 @@
     background: var(--pad-active);
     color: #0b0c10;
     border-color: #7df4c9;
-    box-shadow: 0 0 18px rgba(63, 224, 166, 0.6);
+    box-shadow: 0 0 14px rgba(63, 224, 166, 0.6);
   }
-  .overlay {
-    position: fixed;
-    top: 12px;
-    left: 12px;
-    right: 12px;
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    align-items: stretch;
-    justify-content: space-between;
-    pointer-events: none;
-  }
-  .panel {
+  .diagnostics {
     background: var(--panel);
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 10px 12px;
-    pointer-events: auto;
-    backdrop-filter: blur(6px);
-  }
-  .warning {
-    color: var(--warning);
-    font-size: 13px;
-    font-weight: 600;
-  }
-  .controls {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  button {
-    background: #121722;
-    color: var(--text);
-    border: 1px solid var(--border);
-    padding: 8px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 13px;
-  }
-  button:hover { border-color: var(--accent); }
-  .diagnostics {
-    width: min(360px, 92vw);
-    font-size: 12px;
+    padding: 12px;
+    height: min(70vh, 70vw, 520px);
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     gap: 8px;
+    font-size: 13px;
   }
   .diagnostics pre {
+    flex: 1;
     margin: 0;
     background: #0f131b;
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 8px;
     color: var(--text);
-    max-height: 200px;
     overflow: auto;
+  }
+  .status {
+    color: var(--muted);
+    font-size: 12px;
+  }
+  @media (max-width: 860px) {
+    .layout {
+      grid-template-columns: 1fr;
+      justify-items: center;
+    }
+    .diagnostics {
+      width: min(90vw, 520px);
+      height: 220px;
+    }
   }
 </style>
 </head>
 <body>
-  <div id="padSurface" class="pad-surface" aria-label="Pad grid"></div>
-
-  <div class="overlay">
-    <div class="panel">
-      <div class="warning">Browser limitation: absolute trackpad touch zones require native app.</div>
-      <div class="controls" style="margin-top:8px;">
-        <button id="unlockBtn">Unlock Audio</button>
-        <button id="testBtn">Test: play 4 notes</button>
-        <button id="panicBtn">Panic / Stop</button>
-      </div>
+  <div class="app">
+    <div class="top-bar">
+      <button id="unlockBtn">Unlock Audio</button>
+      <button id="testBtn">Test: play 4 notes</button>
+      <button id="hoverBtn">Trackpad Hover: On</button>
+      <button id="panicBtn">Panic / Stop</button>
     </div>
-    <div class="panel diagnostics">
-      <div id="audioStatus">Audio: locked</div>
-      <div id="lockStatus">Pointer lock: not engaged</div>
-      <pre id="diagOutput"></pre>
+    <div class="layout">
+      <div id="padSurface" class="pad-surface" aria-label="Pad grid"></div>
+      <div class="diagnostics">
+        <div class="status" id="audioStatus">Audio: locked</div>
+        <div class="status" id="eventStatus">Events: idle</div>
+        <pre id="diagOutput"></pre>
+      </div>
     </div>
   </div>
 
@@ -138,20 +148,21 @@
   const padSurface = document.getElementById("padSurface");
   const diagOutput = document.getElementById("diagOutput");
   const audioStatus = document.getElementById("audioStatus");
-  const lockStatus = document.getElementById("lockStatus");
+  const eventStatus = document.getElementById("eventStatus");
   const unlockBtn = document.getElementById("unlockBtn");
   const testBtn = document.getElementById("testBtn");
+  const hoverBtn = document.getElementById("hoverBtn");
   const panicBtn = document.getElementById("panicBtn");
 
   const pads = [];
   const activePadCounts = new Map();
+  const pointerContacts = new Map();
+  const touchContacts = new Map();
   const activeVoices = new Set();
-  const latchedContacts = new Map();
+  let hoverContact = null;
+  let hoverEnabled = true;
 
   let audioCtx = null;
-  let vx = 0.5;
-  let vy = 0.5;
-  let pointerLocked = false;
 
   const frequencies = [
     196, 220, 247, 262,
@@ -226,9 +237,16 @@
     return voice;
   }
 
-  function releaseVoice(voice, index) {
-    if (voice) voice.stop();
-    if (index != null && index >= 0) decrementPad(index);
+  function releaseContact(contact) {
+    if (!contact) return;
+    if (contact.voice) {
+      contact.voice.stop();
+      contact.voice = null;
+    }
+    if (contact.padIndex != null && contact.padIndex >= 0) {
+      decrementPad(contact.padIndex);
+      contact.padIndex = -1;
+    }
   }
 
   function stopAllVoices() {
@@ -240,88 +258,171 @@
 
   function panic() {
     stopAllVoices();
-    latchedContacts.clear();
+    pointerContacts.clear();
+    touchContacts.clear();
     activePadCounts.clear();
     pads.forEach(p => p.classList.remove("active"));
+    hoverContact = null;
+    eventStatus.textContent = "Events: cleared";
   }
 
-  function getPadIndexFromNormalized(x, y) {
-    const col = Math.min(3, Math.max(0, Math.floor(x * 4)));
-    const row = Math.min(3, Math.max(0, Math.floor(y * 4)));
+  function getPadIndexFromClientXY(x, y) {
+    const rect = padSurface.getBoundingClientRect();
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      return -1;
+    }
+    const relX = (x - rect.left) / rect.width;
+    const relY = (y - rect.top) / rect.height;
+    const col = Math.min(3, Math.max(0, Math.floor(relX * 4)));
+    const row = Math.min(3, Math.max(0, Math.floor(relY * 4)));
     return row * 4 + col;
   }
 
-  function getNormalizedFromClientXY(x, y) {
-    const rect = padSurface.getBoundingClientRect();
-    const nx = (x - rect.left) / rect.width;
-    const ny = (y - rect.top) / rect.height;
-    return {
-      nx: Math.min(1, Math.max(0, nx)),
-      ny: Math.min(1, Math.max(0, ny))
-    };
-  }
-
-  function requestLock() {
-    if (!pointerLocked) {
-      padSurface.requestPointerLock();
-    }
-  }
-
-  function updateVirtualCursor(dx, dy) {
-    const rect = padSurface.getBoundingClientRect();
-    const scaleX = 1 / Math.max(1, rect.width);
-    const scaleY = 1 / Math.max(1, rect.height);
-    vx = Math.min(1, Math.max(0, vx + dx * scaleX));
-    vy = Math.min(1, Math.max(0, vy + dy * scaleY));
-  }
-
-  function triggerAtVirtualPosition(modified) {
-    const padIndex = getPadIndexFromNormalized(vx, vy);
-    if (!modified) {
-      for (const entry of Array.from(latchedContacts.values())) {
-        releaseVoice(entry.voice, entry.padIndex);
-      }
-      latchedContacts.clear();
-    }
-    const voice = triggerPad(padIndex);
-    latchedContacts.set(Symbol("contact"), { padIndex, voice });
-  }
-
-  function handleMouseDown(e) {
+  function handlePointerDown(e) {
     ensureAudio();
-    const isModified = e.shiftKey || e.altKey || e.ctrlKey || e.metaKey;
-    if (!pointerLocked) {
-      const { nx, ny } = getNormalizedFromClientXY(e.clientX, e.clientY);
-      vx = nx;
-      vy = ny;
-      triggerAtVirtualPosition(isModified);
-      requestLock();
+    if (hoverContact) {
+      releaseContact(hoverContact);
+      hoverContact = null;
+    }
+    const padIndex = getPadIndexFromClientXY(e.clientX, e.clientY);
+    const voice = triggerPad(padIndex);
+    pointerContacts.set(e.pointerId, {
+      padIndex,
+      voice,
+      x: e.clientX,
+      y: e.clientY
+    });
+    padSurface.setPointerCapture(e.pointerId);
+    eventStatus.textContent = `Pointer: down (id ${e.pointerId})`;
+  }
+
+  function handlePointerMove(e) {
+    if (isHoverPointer(e)) {
+      handleHoverMove(e);
       return;
     }
-    triggerAtVirtualPosition(isModified);
-  }
-
-  function handleMouseMove(e) {
-    if (!pointerLocked) return;
-    updateVirtualCursor(e.movementX, e.movementY);
-  }
-
-  function handleMouseUp(e) {
-    if (!pointerLocked) return;
-    const isModified = e.shiftKey || e.altKey || e.ctrlKey || e.metaKey;
-    if (isModified) return;
-    for (const entry of Array.from(latchedContacts.values())) {
-      releaseVoice(entry.voice, entry.padIndex);
+    if (!pointerContacts.has(e.pointerId)) return;
+    const contact = pointerContacts.get(e.pointerId);
+    const newPad = getPadIndexFromClientXY(e.clientX, e.clientY);
+    if (newPad !== contact.padIndex) {
+      releaseContact(contact);
+      if (newPad >= 0) {
+        contact.voice = triggerPad(newPad);
+        contact.padIndex = newPad;
+      }
     }
-    latchedContacts.clear();
+    contact.x = e.clientX;
+    contact.y = e.clientY;
+    eventStatus.textContent = `Pointer: move (id ${e.pointerId})`;
+  }
+
+  function handlePointerUp(e) {
+    const contact = pointerContacts.get(e.pointerId);
+    releaseContact(contact);
+    pointerContacts.delete(e.pointerId);
+    eventStatus.textContent = `Pointer: up (id ${e.pointerId})`;
+  }
+
+  function isHoverPointer(e) {
+    return hoverEnabled && e.pointerType === "mouse" && e.buttons === 0 && !pointerContacts.has(e.pointerId);
+  }
+
+  function handleHoverMove(e) {
+    if (!hoverContact) {
+      hoverContact = { padIndex: -1, voice: null, x: e.clientX, y: e.clientY };
+    }
+    const newPad = getPadIndexFromClientXY(e.clientX, e.clientY);
+    if (newPad !== hoverContact.padIndex) {
+      releaseContact(hoverContact);
+      if (newPad >= 0) {
+        hoverContact.voice = triggerPad(newPad);
+        hoverContact.padIndex = newPad;
+      }
+    }
+    hoverContact.x = e.clientX;
+    hoverContact.y = e.clientY;
+    eventStatus.textContent = "Hover: move";
+  }
+
+  function handleHoverLeave() {
+    if (!hoverContact) return;
+    releaseContact(hoverContact);
+    hoverContact = null;
+    eventStatus.textContent = "Hover: leave";
+  }
+
+  function handleTouchStart(e) {
+    ensureAudio();
+    e.preventDefault();
+    for (const touch of Array.from(e.changedTouches)) {
+      const padIndex = getPadIndexFromClientXY(touch.clientX, touch.clientY);
+      const voice = triggerPad(padIndex);
+      touchContacts.set(touch.identifier, {
+        padIndex,
+        voice,
+        x: touch.clientX,
+        y: touch.clientY
+      });
+    }
+    eventStatus.textContent = "Touch: start";
+  }
+
+  function handleTouchMove(e) {
+    e.preventDefault();
+    for (const touch of Array.from(e.changedTouches)) {
+      const contact = touchContacts.get(touch.identifier);
+      if (!contact) continue;
+      const newPad = getPadIndexFromClientXY(touch.clientX, touch.clientY);
+      if (newPad !== contact.padIndex) {
+        releaseContact(contact);
+        if (newPad >= 0) {
+          contact.voice = triggerPad(newPad);
+          contact.padIndex = newPad;
+        }
+      }
+      contact.x = touch.clientX;
+      contact.y = touch.clientY;
+    }
+    eventStatus.textContent = "Touch: move";
+  }
+
+  function handleTouchEnd(e) {
+    e.preventDefault();
+    for (const touch of Array.from(e.changedTouches)) {
+      const contact = touchContacts.get(touch.identifier);
+      releaseContact(contact);
+      touchContacts.delete(touch.identifier);
+    }
+    eventStatus.textContent = "Touch: end";
   }
 
   function formatDiagnostics() {
-    const padIndex = getPadIndexFromNormalized(vx, vy);
+    const pointerList = Array.from(pointerContacts.entries()).map(([id, c]) => {
+      const padLabel = c.padIndex >= 0 ? c.padIndex + 1 : "-";
+      return `P${id} @ ${Math.round(c.x)},${Math.round(c.y)} pad=${padLabel}`;
+    });
+    const touchList = Array.from(touchContacts.entries()).map(([id, c]) => {
+      const padLabel = c.padIndex >= 0 ? c.padIndex + 1 : "-";
+      return `T${id} @ ${Math.round(c.x)},${Math.round(c.y)} pad=${padLabel}`;
+    });
+    const hoverList = hoverContact && hoverContact.padIndex >= 0 ? [
+      `H @ ${Math.round(hoverContact.x)},${Math.round(hoverContact.y)} pad=${hoverContact.padIndex + 1}`
+    ] : [];
     const activePads = Array.from(activePadCounts.keys()).sort((a, b) => a - b).map(i => i + 1);
+    const totalContacts = pointerContacts.size + touchContacts.size + (hoverList.length ? 1 : 0);
+
     return [
-      `Virtual cursor: ${vx.toFixed(3)}, ${vy.toFixed(3)} (pad ${padIndex + 1})`,
-      `Latched voices: ${latchedContacts.size}`,
+      `Active contacts: ${totalContacts} (pointer ${pointerContacts.size}, touch ${touchContacts.size})`,
+      "",
+      "Pointer contacts:",
+      pointerList.length ? pointerList.join("\n") : "(none)",
+      "",
+      "Touch contacts:",
+      touchList.length ? touchList.join("\n") : "(none)",
+      "",
+      "Hover contact:",
+      hoverList.length ? hoverList.join("\n") : "(none)",
+      "",
       `Pressed pads: ${activePads.length ? activePads.join(", ") : "(none)"}`
     ].join("\n");
   }
@@ -336,7 +437,8 @@
     indices.forEach((index, i) => {
       const voice = triggerPad(index);
       setTimeout(() => {
-        releaseVoice(voice, index);
+        if (voice) voice.stop(0.06);
+        decrementPad(index);
       }, 220 + i * 30);
     });
   }
@@ -356,27 +458,31 @@
     audioStatus.textContent = `Audio: ${audioCtx.state}`;
   });
 
+  hoverBtn.addEventListener("click", () => {
+    hoverEnabled = !hoverEnabled;
+    hoverBtn.textContent = `Trackpad Hover: ${hoverEnabled ? "On" : "Off"}`;
+    if (!hoverEnabled) {
+      handleHoverLeave();
+    }
+  });
+
   testBtn.addEventListener("click", playTestNotes);
   panicBtn.addEventListener("click", panic);
 
-  padSurface.addEventListener("mousedown", handleMouseDown);
-  padSurface.addEventListener("mousemove", handleMouseMove);
-  padSurface.addEventListener("mouseup", handleMouseUp);
+  padSurface.addEventListener("pointerdown", handlePointerDown);
+  padSurface.addEventListener("pointermove", handlePointerMove);
+  padSurface.addEventListener("pointerup", handlePointerUp);
+  padSurface.addEventListener("pointercancel", handlePointerUp);
+  padSurface.addEventListener("pointerleave", handleHoverLeave);
 
-  document.addEventListener("pointerlockchange", () => {
-    pointerLocked = document.pointerLockElement === padSurface;
-    lockStatus.textContent = pointerLocked ? "Pointer lock: engaged" : "Pointer lock: not engaged";
-  });
+  padSurface.addEventListener("touchstart", handleTouchStart, { passive: false });
+  padSurface.addEventListener("touchmove", handleTouchMove, { passive: false });
+  padSurface.addEventListener("touchend", handleTouchEnd, { passive: false });
+  padSurface.addEventListener("touchcancel", handleTouchEnd, { passive: false });
 
-  window.addEventListener("blur", () => {
-    panic();
-    if (pointerLocked) document.exitPointerLock();
-  });
+  window.addEventListener("blur", panic);
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden) {
-      panic();
-      if (pointerLocked) document.exitPointerLock();
-    }
+    if (document.hidden) panic();
   });
 
   setupPads();
