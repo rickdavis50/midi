@@ -130,7 +130,6 @@
     <div class="top-bar">
       <button id="unlockBtn">Unlock Audio</button>
       <button id="testBtn">Test: play 4 notes</button>
-      <button id="hoverBtn">Trackpad Hover: On</button>
       <button id="panicBtn">Panic / Stop</button>
     </div>
     <div class="layout">
@@ -151,7 +150,6 @@
   const eventStatus = document.getElementById("eventStatus");
   const unlockBtn = document.getElementById("unlockBtn");
   const testBtn = document.getElementById("testBtn");
-  const hoverBtn = document.getElementById("hoverBtn");
   const panicBtn = document.getElementById("panicBtn");
 
   const pads = [];
@@ -159,8 +157,6 @@
   const pointerContacts = new Map();
   const touchContacts = new Map();
   const activeVoices = new Set();
-  let hoverContact = null;
-  let hoverEnabled = true;
 
   let audioCtx = null;
 
@@ -262,7 +258,6 @@
     touchContacts.clear();
     activePadCounts.clear();
     pads.forEach(p => p.classList.remove("active"));
-    hoverContact = null;
     eventStatus.textContent = "Events: cleared";
   }
 
@@ -280,10 +275,6 @@
 
   function handlePointerDown(e) {
     ensureAudio();
-    if (hoverContact) {
-      releaseContact(hoverContact);
-      hoverContact = null;
-    }
     const padIndex = getPadIndexFromClientXY(e.clientX, e.clientY);
     const voice = triggerPad(padIndex);
     pointerContacts.set(e.pointerId, {
@@ -297,10 +288,6 @@
   }
 
   function handlePointerMove(e) {
-    if (isHoverPointer(e)) {
-      handleHoverMove(e);
-      return;
-    }
     if (!pointerContacts.has(e.pointerId)) return;
     const contact = pointerContacts.get(e.pointerId);
     const newPad = getPadIndexFromClientXY(e.clientX, e.clientY);
@@ -321,34 +308,6 @@
     releaseContact(contact);
     pointerContacts.delete(e.pointerId);
     eventStatus.textContent = `Pointer: up (id ${e.pointerId})`;
-  }
-
-  function isHoverPointer(e) {
-    return hoverEnabled && e.pointerType === "mouse" && e.buttons === 0 && !pointerContacts.has(e.pointerId);
-  }
-
-  function handleHoverMove(e) {
-    if (!hoverContact) {
-      hoverContact = { padIndex: -1, voice: null, x: e.clientX, y: e.clientY };
-    }
-    const newPad = getPadIndexFromClientXY(e.clientX, e.clientY);
-    if (newPad !== hoverContact.padIndex) {
-      releaseContact(hoverContact);
-      if (newPad >= 0) {
-        hoverContact.voice = triggerPad(newPad);
-        hoverContact.padIndex = newPad;
-      }
-    }
-    hoverContact.x = e.clientX;
-    hoverContact.y = e.clientY;
-    eventStatus.textContent = "Hover: move";
-  }
-
-  function handleHoverLeave() {
-    if (!hoverContact) return;
-    releaseContact(hoverContact);
-    hoverContact = null;
-    eventStatus.textContent = "Hover: leave";
   }
 
   function handleTouchStart(e) {
@@ -405,11 +364,8 @@
       const padLabel = c.padIndex >= 0 ? c.padIndex + 1 : "-";
       return `T${id} @ ${Math.round(c.x)},${Math.round(c.y)} pad=${padLabel}`;
     });
-    const hoverList = hoverContact && hoverContact.padIndex >= 0 ? [
-      `H @ ${Math.round(hoverContact.x)},${Math.round(hoverContact.y)} pad=${hoverContact.padIndex + 1}`
-    ] : [];
     const activePads = Array.from(activePadCounts.keys()).sort((a, b) => a - b).map(i => i + 1);
-    const totalContacts = pointerContacts.size + touchContacts.size + (hoverList.length ? 1 : 0);
+    const totalContacts = pointerContacts.size + touchContacts.size;
 
     return [
       `Active contacts: ${totalContacts} (pointer ${pointerContacts.size}, touch ${touchContacts.size})`,
@@ -419,9 +375,6 @@
       "",
       "Touch contacts:",
       touchList.length ? touchList.join("\n") : "(none)",
-      "",
-      "Hover contact:",
-      hoverList.length ? hoverList.join("\n") : "(none)",
       "",
       `Pressed pads: ${activePads.length ? activePads.join(", ") : "(none)"}`
     ].join("\n");
@@ -458,14 +411,6 @@
     audioStatus.textContent = `Audio: ${audioCtx.state}`;
   });
 
-  hoverBtn.addEventListener("click", () => {
-    hoverEnabled = !hoverEnabled;
-    hoverBtn.textContent = `Trackpad Hover: ${hoverEnabled ? "On" : "Off"}`;
-    if (!hoverEnabled) {
-      handleHoverLeave();
-    }
-  });
-
   testBtn.addEventListener("click", playTestNotes);
   panicBtn.addEventListener("click", panic);
 
@@ -473,7 +418,6 @@
   padSurface.addEventListener("pointermove", handlePointerMove);
   padSurface.addEventListener("pointerup", handlePointerUp);
   padSurface.addEventListener("pointercancel", handlePointerUp);
-  padSurface.addEventListener("pointerleave", handleHoverLeave);
 
   padSurface.addEventListener("touchstart", handleTouchStart, { passive: false });
   padSurface.addEventListener("touchmove", handleTouchMove, { passive: false });
