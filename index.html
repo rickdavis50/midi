@@ -86,107 +86,98 @@
     align-items: center;
     width: min(940px, 96vw);
   }
-  .pad-surface {
+  .app .pad-surface {
     position: relative;
-    width: min(70vh, 70vw, 520px);
+    width: clamp(320px, 70vh, 620px);
     aspect-ratio: 1 / 1;
-    border-radius: 18px;
-    padding: 14px;
+    border-radius: 22px;
+    padding: clamp(18px, 3vw, 26px);
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: repeat(4, 1fr);
-    gap: 12px;
+    gap: clamp(12px, 2vw, 18px);
     touch-action: none;
-    border: 1px solid var(--border);
-    background: linear-gradient(145deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
-    box-shadow: 0 20px 50px rgba(0,0,0,0.6), 0 0 25px rgba(0,229,255,0.08);
+    border: 1px solid rgba(255,255,255,0.08);
+    background: linear-gradient(145deg, rgba(255,255,255,0.06), rgba(0,0,0,0.35));
+    box-shadow: 0 20px 60px rgba(0,0,0,0.55);
     overflow: hidden;
   }
-  .pad-surface::before {
+  .app .pad-surface::before {
     content: "";
     position: absolute;
-    inset: -20%;
-    background: radial-gradient(circle at 50% 50%, rgba(0,229,255,0.18), transparent 55%),
-                radial-gradient(circle at 60% 40%, rgba(255,45,255,0.12), transparent 60%);
-    opacity: 0.5;
-    filter: blur(30px);
-    animation: ambientPulse 8s ease-in-out infinite;
+    inset: 0;
+    border-radius: 20px;
+    background: linear-gradient(145deg, rgba(255,255,255,0.06), rgba(0,0,0,0.2));
     pointer-events: none;
   }
   @supports (backdrop-filter: blur(6px)) {
-    .pad-surface {
+    .app .pad-surface {
       backdrop-filter: blur(6px);
     }
   }
-  .pad {
+  .app .pad {
     position: relative;
-    background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)),
-                linear-gradient(180deg, var(--pad2), var(--pad));
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)),
+                linear-gradient(180deg, #0b1224, #070b16);
+    border: 1px solid rgba(0,0,0,0.6);
+    border-radius: 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 4px;
-    font-size: 20px;
-    color: var(--muted);
+    font-size: clamp(16px, 2vw, 22px);
+    color: rgba(255,255,255,0.85);
     user-select: none;
     box-shadow:
-      inset 0 1px 2px rgba(255,255,255,0.08),
-      inset 0 -8px 12px rgba(0,0,0,0.5),
-      0 8px 16px rgba(0,0,0,0.45);
-    transition: transform 0.12s ease, box-shadow 0.12s ease, color 0.12s ease;
+      inset 0 2px 2px rgba(255,255,255,0.08),
+      inset 0 -10px 14px rgba(0,0,0,0.65),
+      0 8px 14px rgba(0,0,0,0.5);
+    transition: transform 0.1s ease, box-shadow 0.1s ease, color 0.1s ease;
     overflow: hidden;
   }
-  .pad::before {
+  .app .pad::before {
     content: "";
     position: absolute;
-    inset: 0;
-    background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.18) 45%, transparent 60%);
-    transform: translateX(-60%);
-    opacity: 0;
-    transition: transform 0.3s ease, opacity 0.3s ease;
+    inset: 10px;
+    border-radius: 12px;
+    background: linear-gradient(145deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02));
+    box-shadow: inset 0 1px 2px rgba(255,255,255,0.2),
+                inset 0 -6px 10px rgba(0,0,0,0.5);
     pointer-events: none;
   }
-  .pad:hover::before {
-    transform: translateX(60%);
-    opacity: 0.35;
-  }
-  .pad::after {
+  .app .pad::after {
     content: "";
     position: absolute;
-    width: 140%;
-    height: 140%;
+    inset: -20%;
     border-radius: 50%;
-    background: radial-gradient(circle, var(--glow, rgba(255,255,255,0.2)) 0%, transparent 60%);
-    transform: scale(0.2);
-    opacity: 0;
+    background: radial-gradient(circle, var(--led, #00e5ff) 0%, transparent 55%);
+    opacity: 0.55;
+    filter: blur(6px);
     pointer-events: none;
   }
-  .pad.hit::after {
-    animation: ripple 0.35s ease-out;
+  .app .pad:hover::after {
+    opacity: 0.75;
   }
-  .pad.active {
-    transform: translateY(2px) scale(0.99);
-    color: var(--ink);
+  .app .pad.active {
+    transform: translateY(3px) scale(0.99);
     box-shadow:
-      inset 0 1px 1px rgba(255,255,255,0.12),
-      inset 0 -4px 8px rgba(0,0,0,0.45),
-      0 0 16px var(--glow, rgba(0,229,255,0.5)),
-      0 0 28px rgba(0,0,0,0.4);
+      inset 0 1px 1px rgba(255,255,255,0.1),
+      inset 0 -6px 10px rgba(0,0,0,0.6),
+      0 0 18px var(--led, #00e5ff),
+      0 0 30px rgba(0,0,0,0.55);
   }
-  .pad-number {
+  .app .pad-number {
     font-weight: 600;
-    text-shadow: 0 0 10px rgba(255,255,255,0.2);
+    text-shadow: 0 0 6px rgba(0,0,0,0.6);
   }
-  .pad-label {
+  .app .pad-label {
     font-size: 11px;
     letter-spacing: 0.2em;
     text-transform: uppercase;
     color: var(--muted);
   }
-  .diagnostics {
+  .app .diagnostics {
     background: var(--panel);
     border: 1px solid rgba(255,255,255,0.12);
     border-top: 2px solid rgba(0,229,255,0.5);
@@ -215,19 +206,22 @@
     color: var(--muted);
     font-size: 12px;
   }
-  @keyframes ambientPulse {
-    0%, 100% { opacity: 0.45; transform: scale(0.98); }
-    50% { opacity: 0.7; transform: scale(1.02); }
-  }
-  @keyframes ripple {
-    0% { transform: scale(0.2); opacity: 0.8; }
-    100% { transform: scale(1.2); opacity: 0; }
-  }
   @media (prefers-reduced-motion: reduce) {
-    .pad-surface::before { animation: none; }
-    .pad.hit::after { animation: none; opacity: 0; }
-    .pad::before { transition: none; }
+    .app .pad::before { transition: none; }
+    .app .pad::after { transition: none; }
   }
+  .app .pad:focus-visible {
+    outline: 2px solid rgba(255,255,255,0.6);
+    outline-offset: 3px;
+  }
+  .app .pad:nth-child(8n+1) { --led: #ff4d4d; }
+  .app .pad:nth-child(8n+2) { --led: #ff7a1a; }
+  .app .pad:nth-child(8n+3) { --led: #ffd24a; }
+  .app .pad:nth-child(8n+4) { --led: #7CFF4E; }
+  .app .pad:nth-child(8n+5) { --led: #00e5ff; }
+  .app .pad:nth-child(8n+6) { --led: #4d7dff; }
+  .app .pad:nth-child(8n+7) { --led: #8a5cff; }
+  .app .pad:nth-child(8n) { --led: #ff2dff; }
   @media (max-width: 860px) {
     .layout {
       grid-template-columns: 1fr;
@@ -275,12 +269,6 @@
 
   let audioCtx = null;
   let masterGain = null;
-  let shaper = null;
-  let fxSend = null;
-  let delay = null;
-  let feedback = null;
-  let fxFilter = null;
-  let noiseBuffer = null;
 
   const chordMap = ["C", "G", "Am", "F"];
   const chordColors = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)"];
@@ -299,7 +287,9 @@
   function ensureAudio() {
     if (!audioCtx) {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      setupMasterChain();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = 0.7;
+      masterGain.connect(audioCtx.destination);
     }
     if (audioCtx.state === "suspended") {
       audioCtx.resume();
@@ -307,128 +297,64 @@
     audioStatus.textContent = `Audio: ${audioCtx.state}`;
   }
 
-  function setupMasterChain() {
-    masterGain = audioCtx.createGain();
-    masterGain.gain.value = 0.65;
-
-    shaper = audioCtx.createWaveShaper();
-    shaper.curve = makeSaturationCurve(0.25);
-    shaper.oversample = "2x";
-
-    fxSend = audioCtx.createGain();
-    fxSend.gain.value = 0.12;
-
-    delay = audioCtx.createDelay(0.6);
-    delay.delayTime.value = 0.18;
-
-    feedback = audioCtx.createGain();
-    feedback.gain.value = 0.28;
-
-    fxFilter = audioCtx.createBiquadFilter();
-    fxFilter.type = "lowpass";
-    fxFilter.frequency.value = 2800;
-
-    masterGain.connect(shaper);
-    shaper.connect(audioCtx.destination);
-
-    masterGain.connect(fxSend);
-    fxSend.connect(delay);
-    delay.connect(fxFilter);
-    fxFilter.connect(audioCtx.destination);
-    delay.connect(feedback);
-    feedback.connect(delay);
-
-    noiseBuffer = createNoiseBuffer();
-  }
-
-  function makeSaturationCurve(amount) {
-    const samples = 44100;
-    const curve = new Float32Array(samples);
-    const k = amount * 50;
-    for (let i = 0; i < samples; i++) {
-      const x = (i * 2) / samples - 1;
-      curve[i] = ((1 + k) * x) / (1 + k * Math.abs(x));
-    }
-    return curve;
-  }
-
-  function createNoiseBuffer() {
-    const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 1, audioCtx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < data.length; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
-    return buffer;
-  }
-
-  function playPluckNote(frequency, when = audioCtx.currentTime) {
+  function startSustainOsc(frequency, gainValue, when = audioCtx.currentTime) {
     ensureAudio();
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
-    const filter = audioCtx.createBiquadFilter();
-    const noise = audioCtx.createBufferSource();
-    const noiseGain = audioCtx.createGain();
-
-    const detune = (Math.random() * 2 - 1) * 10;
-    osc.type = "triangle";
+    osc.type = "sawtooth";
     osc.frequency.value = frequency;
-    osc.detune.value = detune;
-
-    filter.type = "lowpass";
-    filter.frequency.value = 3800;
-    filter.Q.value = 0.6;
-
-    noise.buffer = noiseBuffer;
-
-    gain.gain.setValueAtTime(0.0001, when);
-    gain.gain.linearRampToValueAtTime(0.9, when + 0.006);
-    gain.gain.exponentialRampToValueAtTime(0.0001, when + 0.5);
-
-    noiseGain.gain.setValueAtTime(0.25, when);
-    noiseGain.gain.exponentialRampToValueAtTime(0.0001, when + 0.08);
-
-    osc.connect(filter);
-    noise.connect(noiseGain);
-    noiseGain.connect(filter);
-    filter.connect(gain);
+    osc.connect(gain);
     gain.connect(masterGain);
 
+    gain.gain.setValueAtTime(0.0001, when);
+    gain.gain.linearRampToValueAtTime(gainValue, when + 0.01);
     osc.start(when);
-    noise.start(when);
-    osc.stop(when + 1.0);
-    noise.stop(when + 0.1);
 
+    return { osc, gain };
+  }
+
+  function startVoiceForPad(padIndex) {
+    const when = audioCtx ? audioCtx.currentTime : 0;
+    if (padIndex < 4) {
+      const chord = chords[chordMap[padIndex]] || [];
+      const voices = chord.map(note => startSustainOsc(note, 0.12, when));
+      const voice = {
+        voices,
+        stop(release = 0.14) {
+          const now = audioCtx.currentTime;
+          voices.forEach(({ osc, gain }) => {
+            gain.gain.cancelScheduledValues(now);
+            gain.gain.setValueAtTime(Math.max(gain.gain.value, 0.0001), now);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + release);
+            osc.stop(now + release + 0.03);
+          });
+        }
+      };
+      activeVoices.add(voice);
+      return voice;
+    }
+    const scaleIndex = (padIndex - 4) % scaleNotes.length;
+    const { osc, gain } = startSustainOsc(scaleNotes[scaleIndex], 0.2, when);
     const voice = {
       osc,
-      noise,
       gain,
-      stop(release = 0.12) {
+      stop(release = 0.14) {
         const now = audioCtx.currentTime;
         gain.gain.cancelScheduledValues(now);
         gain.gain.setValueAtTime(Math.max(gain.gain.value, 0.0001), now);
         gain.gain.exponentialRampToValueAtTime(0.0001, now + release);
-        osc.stop(now + release + 0.05);
-        noise.stop(now + release + 0.05);
+        osc.stop(now + release + 0.03);
       }
     };
-
     activeVoices.add(voice);
     osc.onended = () => activeVoices.delete(voice);
-
     return voice;
   }
 
-  function playChord(chordName, when = audioCtx.currentTime) {
-    const notes = chords[chordName] || [];
-    const voices = notes.map(note => playPluckNote(note, when));
-    const voice = {
-      stop(release = 0.12) {
-        voices.forEach(v => v.stop(release));
-      }
-    };
-    activeVoices.add(voice);
-    setTimeout(() => activeVoices.delete(voice), 1200);
-    return voice;
+  function releaseVoice(voice, release = 0.14) {
+    if (!voice) return;
+    voice.stop(release);
+    activeVoices.delete(voice);
   }
 
   function incrementPad(index) {
@@ -448,31 +374,17 @@
     }
   }
 
-  function pulsePad(index) {
-    const pad = pads[index];
-    pad.classList.remove("hit");
-    void pad.offsetWidth;
-    pad.classList.add("hit");
-  }
-
   function triggerPad(index) {
     if (index == null || index < 0) return null;
-    let voice = null;
-    if (index < 4) {
-      voice = playChord(chordMap[index]);
-    } else {
-      const scaleIndex = (index - 4) % scaleNotes.length;
-      voice = playPluckNote(scaleNotes[scaleIndex]);
-    }
+    const voice = startVoiceForPad(index);
     incrementPad(index);
-    pulsePad(index);
     return voice;
   }
 
   function releaseContact(contact) {
     if (!contact) return;
     if (contact.voice) {
-      contact.voice.stop();
+      releaseVoice(contact.voice);
       contact.voice = null;
     }
     if (contact.padIndex != null && contact.padIndex >= 0) {
@@ -626,7 +538,7 @@
     indices.forEach((index, i) => {
       const voice = triggerPad(index);
       setTimeout(() => {
-        if (voice) voice.stop(0.06);
+        if (voice) releaseVoice(voice, 0.1);
         decrementPad(index);
       }, 220 + i * 30);
     });
@@ -638,6 +550,7 @@
       const pad = document.createElement("div");
       pad.className = "pad";
       pad.dataset.index = String(i);
+      pad.tabIndex = 0;
       const number = document.createElement("div");
       number.className = "pad-number";
       number.textContent = String(i + 1);
