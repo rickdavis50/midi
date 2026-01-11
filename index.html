@@ -357,11 +357,11 @@
 
   function formatDiagnostics() {
     const pointerList = Array.from(pointerContacts.entries()).map(([id, c]) => {
-      const padLabel = c.padIndex >= 0 ? c.padIndex + 1 : \"-\";
+      const padLabel = c.padIndex >= 0 ? c.padIndex + 1 : "-";
       return `P${id} @ ${Math.round(c.x)},${Math.round(c.y)} pad=${padLabel}`;
     });
     const touchList = Array.from(touchContacts.entries()).map(([id, c]) => {
-      const padLabel = c.padIndex >= 0 ? c.padIndex + 1 : \"-\";
+      const padLabel = c.padIndex >= 0 ? c.padIndex + 1 : "-";
       return `T${id} @ ${Math.round(c.x)},${Math.round(c.y)} pad=${padLabel}`;
     });
     const activePads = Array.from(activePadCounts.keys()).sort((a, b) => a - b).map(i => i + 1);
