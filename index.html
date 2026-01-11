@@ -6,24 +6,37 @@
 <title>MIDI Pads MVP</title>
 <style>
   :root {
-    --bg: #0b0c10;
-    --panel: #141821;
-    --pad: #1f2430;
-    --pad-active: #3fe0a6;
-    --text: #e6e6e6;
-    --muted: #97a1b3;
-    --accent: #ffb347;
-    --border: #2c3343;
+    --bg: #05060a;
+    --panel: #0b1020;
+    --pad: #0a0f1d;
+    --pad2: #0d1530;
+    --ink: rgba(255,255,255,.92);
+    --muted: rgba(255,255,255,.62);
+    --c1: #00e5ff;
+    --c2: #ff2dff;
+    --c3: #7CFF4E;
+    --c4: #ffd24a;
+    --border: rgba(255,255,255,.08);
   }
   * { box-sizing: border-box; }
   html, body {
     margin: 0;
     padding: 0;
     height: 100%;
-    background: var(--bg);
-    color: var(--text);
-    font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+    background: radial-gradient(circle at 20% 20%, rgba(0,229,255,0.08), transparent 40%),
+                radial-gradient(circle at 80% 30%, rgba(255,45,255,0.06), transparent 45%),
+                radial-gradient(circle at 50% 80%, rgba(124,255,78,0.05), transparent 45%),
+                #05060a;
+    color: var(--ink);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     overflow: hidden;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.6) 70%);
   }
   .app {
     height: 100%;
@@ -41,77 +54,179 @@
     justify-content: center;
   }
   button {
-    background: var(--panel);
-    color: var(--text);
-    border: 1px solid var(--border);
-    padding: 10px 14px;
-    border-radius: 8px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+    color: var(--ink);
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 8px 14px;
+    border-radius: 999px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
   }
-  button:hover { border-color: var(--accent); }
+  button:hover {
+    border-color: rgba(0,229,255,0.6);
+    box-shadow: 0 0 14px rgba(0,229,255,0.35);
+  }
+  button:active {
+    transform: translateY(1px);
+  }
+  #panicBtn {
+    border-color: rgba(255,210,74,0.35);
+    box-shadow: 0 0 10px rgba(255,45,255,0.25);
+  }
+  #panicBtn:hover {
+    box-shadow: 0 0 16px rgba(255,45,255,0.45);
+  }
   .layout {
     display: grid;
     grid-template-columns: 1fr 320px;
     gap: 16px;
     align-items: center;
-    width: min(920px, 96vw);
+    width: min(940px, 96vw);
   }
   .pad-surface {
+    position: relative;
     width: min(70vh, 70vw, 520px);
     aspect-ratio: 1 / 1;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 12px;
+    border-radius: 18px;
+    padding: 14px;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: repeat(4, 1fr);
-    gap: 10px;
+    gap: 12px;
     touch-action: none;
+    border: 1px solid var(--border);
+    background: linear-gradient(145deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6), 0 0 25px rgba(0,229,255,0.08);
+    overflow: hidden;
+  }
+  .pad-surface::before {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    background: radial-gradient(circle at 50% 50%, rgba(0,229,255,0.18), transparent 55%),
+                radial-gradient(circle at 60% 40%, rgba(255,45,255,0.12), transparent 60%);
+    opacity: 0.5;
+    filter: blur(30px);
+    animation: ambientPulse 8s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @supports (backdrop-filter: blur(6px)) {
+    .pad-surface {
+      backdrop-filter: blur(6px);
+    }
   }
   .pad {
-    background: var(--pad);
-    border: 1px solid var(--border);
-    border-radius: 10px;
+    position: relative;
+    background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)),
+                linear-gradient(180deg, var(--pad2), var(--pad));
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    gap: 4px;
+    font-size: 20px;
     color: var(--muted);
     user-select: none;
+    box-shadow:
+      inset 0 1px 2px rgba(255,255,255,0.08),
+      inset 0 -8px 12px rgba(0,0,0,0.5),
+      0 8px 16px rgba(0,0,0,0.45);
+    transition: transform 0.12s ease, box-shadow 0.12s ease, color 0.12s ease;
+    overflow: hidden;
+  }
+  .pad::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.18) 45%, transparent 60%);
+    transform: translateX(-60%);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    pointer-events: none;
+  }
+  .pad:hover::before {
+    transform: translateX(60%);
+    opacity: 0.35;
+  }
+  .pad::after {
+    content: "";
+    position: absolute;
+    width: 140%;
+    height: 140%;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--glow, rgba(255,255,255,0.2)) 0%, transparent 60%);
+    transform: scale(0.2);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .pad.hit::after {
+    animation: ripple 0.35s ease-out;
   }
   .pad.active {
-    background: var(--pad-active);
-    color: #0b0c10;
-    border-color: #7df4c9;
-    box-shadow: 0 0 14px rgba(63, 224, 166, 0.6);
+    transform: translateY(2px) scale(0.99);
+    color: var(--ink);
+    box-shadow:
+      inset 0 1px 1px rgba(255,255,255,0.12),
+      inset 0 -4px 8px rgba(0,0,0,0.45),
+      0 0 16px var(--glow, rgba(0,229,255,0.5)),
+      0 0 28px rgba(0,0,0,0.4);
+  }
+  .pad-number {
+    font-weight: 600;
+    text-shadow: 0 0 10px rgba(255,255,255,0.2);
+  }
+  .pad-label {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
   }
   .diagnostics {
     background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-top: 2px solid rgba(0,229,255,0.5);
+    border-radius: 14px;
     padding: 12px;
     height: min(70vh, 70vw, 520px);
     overflow: hidden;
     display: flex;
     flex-direction: column;
     gap: 8px;
-    font-size: 13px;
+    font-size: 12px;
   }
   .diagnostics pre {
     flex: 1;
     margin: 0;
-    background: #0f131b;
-    border: 1px solid var(--border);
+    background: linear-gradient(transparent 50%, rgba(255,255,255,0.03) 50%),
+                repeating-linear-gradient(0deg, rgba(0,0,0,0.2), rgba(0,0,0,0.2) 2px, transparent 2px, transparent 4px);
+    border: 1px solid rgba(255,255,255,0.08);
     border-radius: 8px;
     padding: 8px;
-    color: var(--text);
+    color: var(--ink);
     overflow: auto;
+    font-family: "SFMono-Regular", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   }
   .status {
     color: var(--muted);
     font-size: 12px;
+  }
+  @keyframes ambientPulse {
+    0%, 100% { opacity: 0.45; transform: scale(0.98); }
+    50% { opacity: 0.7; transform: scale(1.02); }
+  }
+  @keyframes ripple {
+    0% { transform: scale(0.2); opacity: 0.8; }
+    100% { transform: scale(1.2); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pad-surface::before { animation: none; }
+    .pad.hit::after { animation: none; opacity: 0; }
+    .pad::before { transition: none; }
   }
   @media (max-width: 860px) {
     .layout {
@@ -159,17 +274,32 @@
   const activeVoices = new Set();
 
   let audioCtx = null;
+  let masterGain = null;
+  let shaper = null;
+  let fxSend = null;
+  let delay = null;
+  let feedback = null;
+  let fxFilter = null;
+  let noiseBuffer = null;
 
-  const frequencies = [
-    196, 220, 247, 262,
-    294, 330, 349, 392,
-    440, 494, 523, 587,
-    659, 698, 784, 880
+  const chordMap = ["C", "G", "Am", "F"];
+  const chordColors = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)"];
+  const chords = {
+    C: [261.63, 329.63, 392.0, 523.25],
+    G: [196.0, 246.94, 293.66, 392.0],
+    Am: [220.0, 261.63, 329.63, 440.0],
+    F: [174.61, 220.0, 261.63, 349.23]
+  };
+  const scaleNotes = [
+    261.63, 311.13, 349.23, 392.0,
+    466.16, 523.25, 622.25, 698.46,
+    783.99, 932.33, 1046.5, 1244.5
   ];
 
   function ensureAudio() {
     if (!audioCtx) {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      setupMasterChain();
     }
     if (audioCtx.state === "suspended") {
       audioCtx.resume();
@@ -177,35 +307,127 @@
     audioStatus.textContent = `Audio: ${audioCtx.state}`;
   }
 
-  function createVoice(frequency) {
+  function setupMasterChain() {
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.65;
+
+    shaper = audioCtx.createWaveShaper();
+    shaper.curve = makeSaturationCurve(0.25);
+    shaper.oversample = "2x";
+
+    fxSend = audioCtx.createGain();
+    fxSend.gain.value = 0.12;
+
+    delay = audioCtx.createDelay(0.6);
+    delay.delayTime.value = 0.18;
+
+    feedback = audioCtx.createGain();
+    feedback.gain.value = 0.28;
+
+    fxFilter = audioCtx.createBiquadFilter();
+    fxFilter.type = "lowpass";
+    fxFilter.frequency.value = 2800;
+
+    masterGain.connect(shaper);
+    shaper.connect(audioCtx.destination);
+
+    masterGain.connect(fxSend);
+    fxSend.connect(delay);
+    delay.connect(fxFilter);
+    fxFilter.connect(audioCtx.destination);
+    delay.connect(feedback);
+    feedback.connect(delay);
+
+    noiseBuffer = createNoiseBuffer();
+  }
+
+  function makeSaturationCurve(amount) {
+    const samples = 44100;
+    const curve = new Float32Array(samples);
+    const k = amount * 50;
+    for (let i = 0; i < samples; i++) {
+      const x = (i * 2) / samples - 1;
+      curve[i] = ((1 + k) * x) / (1 + k * Math.abs(x));
+    }
+    return curve;
+  }
+
+  function createNoiseBuffer() {
+    const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 1, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    return buffer;
+  }
+
+  function playPluckNote(frequency, when = audioCtx.currentTime) {
     ensureAudio();
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
-    osc.type = "sine";
+    const filter = audioCtx.createBiquadFilter();
+    const noise = audioCtx.createBufferSource();
+    const noiseGain = audioCtx.createGain();
+
+    const detune = (Math.random() * 2 - 1) * 10;
+    osc.type = "triangle";
     osc.frequency.value = frequency;
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
+    osc.detune.value = detune;
 
-    const t = audioCtx.currentTime;
-    gain.gain.setValueAtTime(0.0001, t);
-    gain.gain.linearRampToValueAtTime(0.9, t + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.25, t + 0.12);
+    filter.type = "lowpass";
+    filter.frequency.value = 3800;
+    filter.Q.value = 0.6;
 
-    osc.start(t);
+    noise.buffer = noiseBuffer;
+
+    gain.gain.setValueAtTime(0.0001, when);
+    gain.gain.linearRampToValueAtTime(0.9, when + 0.006);
+    gain.gain.exponentialRampToValueAtTime(0.0001, when + 0.5);
+
+    noiseGain.gain.setValueAtTime(0.25, when);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, when + 0.08);
+
+    osc.connect(filter);
+    noise.connect(noiseGain);
+    noiseGain.connect(filter);
+    filter.connect(gain);
+    gain.connect(masterGain);
+
+    osc.start(when);
+    noise.start(when);
+    osc.stop(when + 1.0);
+    noise.stop(when + 0.1);
 
     const voice = {
       osc,
+      noise,
       gain,
-      stop(release = 0.08) {
+      stop(release = 0.12) {
         const now = audioCtx.currentTime;
         gain.gain.cancelScheduledValues(now);
         gain.gain.setValueAtTime(Math.max(gain.gain.value, 0.0001), now);
         gain.gain.exponentialRampToValueAtTime(0.0001, now + release);
-        osc.stop(now + release + 0.02);
+        osc.stop(now + release + 0.05);
+        noise.stop(now + release + 0.05);
+      }
+    };
+
+    activeVoices.add(voice);
+    osc.onended = () => activeVoices.delete(voice);
+
+    return voice;
+  }
+
+  function playChord(chordName, when = audioCtx.currentTime) {
+    const notes = chords[chordName] || [];
+    const voices = notes.map(note => playPluckNote(note, when));
+    const voice = {
+      stop(release = 0.12) {
+        voices.forEach(v => v.stop(release));
       }
     };
     activeVoices.add(voice);
-    osc.onended = () => activeVoices.delete(voice);
+    setTimeout(() => activeVoices.delete(voice), 1200);
     return voice;
   }
 
@@ -226,10 +448,24 @@
     }
   }
 
+  function pulsePad(index) {
+    const pad = pads[index];
+    pad.classList.remove("hit");
+    void pad.offsetWidth;
+    pad.classList.add("hit");
+  }
+
   function triggerPad(index) {
     if (index == null || index < 0) return null;
-    const voice = createVoice(frequencies[index % frequencies.length]);
+    let voice = null;
+    if (index < 4) {
+      voice = playChord(chordMap[index]);
+    } else {
+      const scaleIndex = (index - 4) % scaleNotes.length;
+      voice = playPluckNote(scaleNotes[scaleIndex]);
+    }
     incrementPad(index);
+    pulsePad(index);
     return voice;
   }
 
@@ -397,10 +633,22 @@
   }
 
   function setupPads() {
+    const colors = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)"];
     for (let i = 0; i < 16; i++) {
       const pad = document.createElement("div");
       pad.className = "pad";
-      pad.textContent = String(i + 1);
+      pad.dataset.index = String(i);
+      const number = document.createElement("div");
+      number.className = "pad-number";
+      number.textContent = String(i + 1);
+      pad.appendChild(number);
+      if (i < 4) {
+        const label = document.createElement("div");
+        label.className = "pad-label";
+        label.textContent = chordMap[i];
+        pad.appendChild(label);
+      }
+      pad.style.setProperty("--glow", colors[i % colors.length]);
       pads.push(pad);
       padSurface.appendChild(pad);
     }
