@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MIDI Pads MVP</title>
+<style>
+  :root {
+    --bg: #0b0c10;
+    --panel: #141821;
+    --pad: #1f2430;
+    --pad-active: #3fe0a6;
+    --text: #e6e6e6;
+    --muted: #97a1b3;
+    --accent: #ffb347;
+    --border: #2c3343;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+    overflow: hidden;
+  }
+  .app {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 16px;
+  }
+  .top-bar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  button {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 10px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  button:hover { border-color: var(--accent); }
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 16px;
+    align-items: center;
+    width: min(920px, 96vw);
+  }
+  .pad-surface {
+    width: min(70vh, 70vw, 520px);
+    aspect-ratio: 1 / 1;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 10px;
+    touch-action: none;
+  }
+  .pad {
+    background: var(--pad);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: var(--muted);
+    user-select: none;
+  }
+  .pad.active {
+    background: var(--pad-active);
+    color: #0b0c10;
+    border-color: #7df4c9;
+    box-shadow: 0 0 14px rgba(63, 224, 166, 0.6);
+  }
+  .diagnostics {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    height: min(70vh, 70vw, 520px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 13px;
+  }
+  .diagnostics pre {
+    flex: 1;
+    margin: 0;
+    background: #0f131b;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px;
+    color: var(--text);
+    overflow: auto;
+  }
+  .status {
+    color: var(--muted);
+    font-size: 12px;
+  }
+  @media (max-width: 860px) {
+    .layout {
+      grid-template-columns: 1fr;
+      justify-items: center;
+    }
+    .diagnostics {
+      width: min(90vw, 520px);
+      height: 220px;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="top-bar">
+      <button id="unlockBtn">Unlock Audio</button>
+      <button id="testBtn">Test: play 4 notes</button>
+      <button id="panicBtn">Panic / Stop</button>
+    </div>
+    <div class="layout">
+      <div id="padSurface" class="pad-surface" aria-label="Pad grid"></div>
+      <div class="diagnostics">
+        <div class="status" id="audioStatus">Audio: locked</div>
+        <div class="status" id="eventStatus">Events: idle</div>
+        <pre id="diagOutput"></pre>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const padSurface = document.getElementById("padSurface");
+  const diagOutput = document.getElementById("diagOutput");
+  const audioStatus = document.getElementById("audioStatus");
+  const eventStatus = document.getElementById("eventStatus");
+  const unlockBtn = document.getElementById("unlockBtn");
+  const testBtn = document.getElementById("testBtn");
+  const panicBtn = document.getElementById("panicBtn");
+
+  const pads = [];
+  const activePadCounts = new Map();
+  const pointerContacts = new Map();
+  const touchContacts = new Map();
+  const activeVoices = new Set();
+
+  let audioCtx = null;
+
+  const frequencies = [
+    196, 220, 247, 262,
+    294, 330, 349, 392,
+    440, 494, 523, 587,
+    659, 698, 784, 880
+  ];
+
+  function ensureAudio() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === "suspended") {
+      audioCtx.resume();
+    }
+    audioStatus.textContent = `Audio: ${audioCtx.state}`;
+  }
+
+  function createVoice(frequency) {
+    ensureAudio();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = frequency;
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    const t = audioCtx.currentTime;
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.linearRampToValueAtTime(0.9, t + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.25, t + 0.12);
+
+    osc.start(t);
+
+    const voice = {
+      osc,
+      gain,
+      stop(release = 0.08) {
+        const now = audioCtx.currentTime;
+        gain.gain.cancelScheduledValues(now);
+        gain.gain.setValueAtTime(Math.max(gain.gain.value, 0.0001), now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + release);
+        osc.stop(now + release + 0.02);
+      }
+    };
+    activeVoices.add(voice);
+    osc.onended = () => activeVoices.delete(voice);
+    return voice;
+  }
+
+  function incrementPad(index) {
+    const count = (activePadCounts.get(index) || 0) + 1;
+    activePadCounts.set(index, count);
+    pads[index].classList.toggle("active", count > 0);
+  }
+
+  function decrementPad(index) {
+    if (index == null || index < 0) return;
+    const count = (activePadCounts.get(index) || 0) - 1;
+    if (count <= 0) {
+      activePadCounts.delete(index);
+      pads[index].classList.remove("active");
+    } else {
+      activePadCounts.set(index, count);
+    }
+  }
+
+  function triggerPad(index) {
+    if (index == null || index < 0) return null;
+    const voice = createVoice(frequencies[index % frequencies.length]);
+    incrementPad(index);
+    return voice;
+  }
+
+  function releaseContact(contact) {
+    if (!contact) return;
+    if (contact.voice) {
+      contact.voice.stop();
+      contact.voice = null;
+    }
+    if (contact.padIndex != null && contact.padIndex >= 0) {
+      decrementPad(contact.padIndex);
+      contact.padIndex = -1;
+    }
+  }
+
+  function stopAllVoices() {
+    for (const voice of Array.from(activeVoices)) {
+      voice.stop(0.02);
+    }
+    activeVoices.clear();
+  }
+
+  function panic() {
+    stopAllVoices();
+    pointerContacts.clear();
+    touchContacts.clear();
+    activePadCounts.clear();
+    pads.forEach(p => p.classList.remove("active"));
+    eventStatus.textContent = "Events: cleared";
+  }
+
+  function getPadIndexFromClientXY(x, y) {
+    const rect = padSurface.getBoundingClientRect();
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      return -1;
+    }
+    const relX = (x - rect.left) / rect.width;
+    const relY = (y - rect.top) / rect.height;
+    const col = Math.min(3, Math.max(0, Math.floor(relX * 4)));
+    const row = Math.min(3, Math.max(0, Math.floor(relY * 4)));
+    return row * 4 + col;
+  }
+
+  function handlePointerDown(e) {
+    ensureAudio();
+    const padIndex = getPadIndexFromClientXY(e.clientX, e.clientY);
+    const voice = triggerPad(padIndex);
+    pointerContacts.set(e.pointerId, {
+      padIndex,
+      voice,
+      x: e.clientX,
+      y: e.clientY
+    });
+    padSurface.setPointerCapture(e.pointerId);
+    eventStatus.textContent = `Pointer: down (id ${e.pointerId})`;
+  }
+
+  function handlePointerMove(e) {
+    if (!pointerContacts.has(e.pointerId)) return;
+    const contact = pointerContacts.get(e.pointerId);
+    const newPad = getPadIndexFromClientXY(e.clientX, e.clientY);
+    if (newPad !== contact.padIndex) {
+      releaseContact(contact);
+      if (newPad >= 0) {
+        contact.voice = triggerPad(newPad);
+        contact.padIndex = newPad;
+      }
+    }
+    contact.x = e.clientX;
+    contact.y = e.clientY;
+    eventStatus.textContent = `Pointer: move (id ${e.pointerId})`;
+  }
+
+  function handlePointerUp(e) {
+    const contact = pointerContacts.get(e.pointerId);
+    releaseContact(contact);
+    pointerContacts.delete(e.pointerId);
+    eventStatus.textContent = `Pointer: up (id ${e.pointerId})`;
+  }
+
+  function handleTouchStart(e) {
+    ensureAudio();
+    e.preventDefault();
+    for (const touch of Array.from(e.changedTouches)) {
+      const padIndex = getPadIndexFromClientXY(touch.clientX, touch.clientY);
+      const voice = triggerPad(padIndex);
+      touchContacts.set(touch.identifier, {
+        padIndex,
+        voice,
+        x: touch.clientX,
+        y: touch.clientY
+      });
+    }
+    eventStatus.textContent = "Touch: start";
+  }
+
+  function handleTouchMove(e) {
+    e.preventDefault();
+    for (const touch of Array.from(e.changedTouches)) {
+      const contact = touchContacts.get(touch.identifier);
+      if (!contact) continue;
+      const newPad = getPadIndexFromClientXY(touch.clientX, touch.clientY);
+      if (newPad !== contact.padIndex) {
+        releaseContact(contact);
+        if (newPad >= 0) {
+          contact.voice = triggerPad(newPad);
+          contact.padIndex = newPad;
+        }
+      }
+      contact.x = touch.clientX;
+      contact.y = touch.clientY;
+    }
+    eventStatus.textContent = "Touch: move";
+  }
+
+  function handleTouchEnd(e) {
+    e.preventDefault();
+    for (const touch of Array.from(e.changedTouches)) {
+      const contact = touchContacts.get(touch.identifier);
+      releaseContact(contact);
+      touchContacts.delete(touch.identifier);
+    }
+    eventStatus.textContent = "Touch: end";
+  }
+
+  function formatDiagnostics() {
+    const pointerList = Array.from(pointerContacts.entries()).map(([id, c]) => {
+      const padLabel = c.padIndex >= 0 ? c.padIndex + 1 : \"-\";
+      return `P${id} @ ${Math.round(c.x)},${Math.round(c.y)} pad=${padLabel}`;
+    });
+    const touchList = Array.from(touchContacts.entries()).map(([id, c]) => {
+      const padLabel = c.padIndex >= 0 ? c.padIndex + 1 : \"-\";
+      return `T${id} @ ${Math.round(c.x)},${Math.round(c.y)} pad=${padLabel}`;
+    });
+    const activePads = Array.from(activePadCounts.keys()).sort((a, b) => a - b).map(i => i + 1);
+    const totalContacts = pointerContacts.size + touchContacts.size;
+
+    return [
+      `Active contacts: ${totalContacts} (pointer ${pointerContacts.size}, touch ${touchContacts.size})`,
+      "",
+      "Pointer contacts:",
+      pointerList.length ? pointerList.join("\n") : "(none)",
+      "",
+      "Touch contacts:",
+      touchList.length ? touchList.join("\n") : "(none)",
+      "",
+      `Pressed pads: ${activePads.length ? activePads.join(", ") : "(none)"}`
+    ].join("\n");
+  }
+
+  function tickDiagnostics() {
+    diagOutput.textContent = formatDiagnostics();
+  }
+
+  function playTestNotes() {
+    ensureAudio();
+    const indices = [0, 5, 10, 15];
+    indices.forEach((index, i) => {
+      const voice = triggerPad(index);
+      setTimeout(() => {
+        if (voice) voice.stop(0.06);
+        decrementPad(index);
+      }, 220 + i * 30);
+    });
+  }
+
+  function setupPads() {
+    for (let i = 0; i < 16; i++) {
+      const pad = document.createElement("div");
+      pad.className = "pad";
+      pad.textContent = String(i + 1);
+      pads.push(pad);
+      padSurface.appendChild(pad);
+    }
+  }
+
+  unlockBtn.addEventListener("click", () => {
+    ensureAudio();
+    audioStatus.textContent = `Audio: ${audioCtx.state}`;
+  });
+
+  testBtn.addEventListener("click", playTestNotes);
+  panicBtn.addEventListener("click", panic);
+
+  padSurface.addEventListener("pointerdown", handlePointerDown);
+  padSurface.addEventListener("pointermove", handlePointerMove);
+  padSurface.addEventListener("pointerup", handlePointerUp);
+  padSurface.addEventListener("pointercancel", handlePointerUp);
+
+  padSurface.addEventListener("touchstart", handleTouchStart, { passive: false });
+  padSurface.addEventListener("touchmove", handleTouchMove, { passive: false });
+  padSurface.addEventListener("touchend", handleTouchEnd, { passive: false });
+  padSurface.addEventListener("touchcancel", handleTouchEnd, { passive: false });
+
+  window.addEventListener("blur", panic);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) panic();
+  });
+
+  setupPads();
+  tickDiagnostics();
+  setInterval(tickDiagnostics, 33);
+})();
+</script>
+</body>
+</html>
