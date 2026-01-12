@@ -1116,16 +1116,13 @@
       `Chord: ${currentChord}`,
       "",
       "Pointer contacts:",
-      pointerList.length ? pointerList.join("
-") : "(none)",
+      pointerList.length ? pointerList.join("\\n") : "(none)",
       "",
       "Touch contacts:",
-      touchList.length ? touchList.join("
-") : "(none)",
+      touchList.length ? touchList.join("\\n") : "(none)",
       "",
       `Pressed pads: ${activePads.length ? activePads.join(", ") : "(none)"}`
-    ].join("
-");
+    ].join("\\n");
   }
 
   function tickDiagnostics() {
