@@ -3,61 +3,59 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>MIDI Pads MVP</title>
+<title>Pop Parts for Kids</title>
 <style>
   :root {
     --bg: #05060a;
-    --panel: #0b1020;
-    --pad: #0a0f1d;
-    --pad2: #0d1530;
-    --ink: rgba(255,255,255,.92);
-    --muted: rgba(255,255,255,.62);
-    --c1: #00e5ff;
-    --c2: #ff2dff;
-    --c3: #7CFF4E;
-    --c4: #ffd24a;
-    --border: rgba(255,255,255,.08);
+    --panel: #0d1326;
+    --ink: rgba(255,255,255,0.95);
+    --muted: rgba(255,255,255,0.65);
+    --beat: 0.5s;
+    --groove: 0.08;
+    --magic: 0.1;
   }
   * { box-sizing: border-box; }
   html, body {
     margin: 0;
     padding: 0;
     height: 100%;
-    background: radial-gradient(circle at 20% 20%, rgba(0,229,255,0.08), transparent 40%),
-                radial-gradient(circle at 80% 30%, rgba(255,45,255,0.06), transparent 45%),
-                radial-gradient(circle at 50% 80%, rgba(124,255,78,0.05), transparent 45%),
-                #05060a;
+    background:
+      radial-gradient(circle at 20% 15%, rgba(0,229,255,0.08), transparent 45%),
+      radial-gradient(circle at 80% 25%, rgba(255,45,255,0.08), transparent 45%),
+      radial-gradient(circle at 50% 85%, rgba(124,255,78,0.07), transparent 50%),
+      var(--bg);
     color: var(--ink);
     font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     overflow: hidden;
   }
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    background: radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.6) 70%);
-  }
   .app {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    min-height: 100%;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    padding: 20px;
     gap: 16px;
-    padding: 16px;
   }
-  .top-bar {
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .title {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .controls {
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
   }
   button {
-    background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+    background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04));
     color: var(--ink);
-    border: 1px solid rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.2);
     padding: 8px 14px;
     border-radius: 999px;
     cursor: pointer;
@@ -70,355 +68,296 @@
     border-color: rgba(0,229,255,0.6);
     box-shadow: 0 0 14px rgba(0,229,255,0.35);
   }
-  button:active {
-    transform: translateY(1px);
-  }
+  button:active { transform: translateY(1px); }
   #panicBtn {
-    border-color: rgba(255,210,74,0.35);
-    box-shadow: 0 0 10px rgba(255,45,255,0.25);
+    border-color: rgba(255,45,255,0.4);
+    box-shadow: 0 0 12px rgba(255,45,255,0.3);
   }
-  #panicBtn:hover {
-    box-shadow: 0 0 16px rgba(255,45,255,0.45);
-  }
-  .tempo-controls {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 10px;
-    border-radius: 999px;
-    border: 1px solid rgba(255,255,255,0.12);
-    background: rgba(255,255,255,0.03);
-  }
-  .tempo-controls input[type="range"] {
-    width: 120px;
-  }
-  .control-label {
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-  .control-value {
-    font-size: 12px;
-    font-variant-numeric: tabular-nums;
-  }
-  .toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 10px;
-    border-radius: 999px;
-    border: 1px solid rgba(255,255,255,0.12);
-    background: rgba(255,255,255,0.02);
-    color: var(--muted);
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-  .toggle input,
-  .toggle select {
-    accent-color: var(--c1);
-    background: transparent;
-    color: var(--ink);
-    border: none;
-    outline: none;
-  }
+
   .layout {
     display: grid;
-    grid-template-columns: 1fr 320px;
-    gap: 16px;
+    grid-template-columns: minmax(280px, 1fr) minmax(260px, 320px);
+    gap: 20px;
     align-items: center;
-    width: min(940px, 96vw);
   }
-  .app .pad-surface {
-    position: relative;
-    width: min(92vw, 92vh, 720px);
-    aspect-ratio: 1 / 1;
-    border-radius: 22px;
-    padding: clamp(16px, 3vw, 26px);
+
+  .chord-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(4, 1fr);
-    gap: clamp(12px, 2.2vw, 18px);
-    touch-action: none;
-    border: 1px solid rgba(255,255,255,0.08);
-    background: linear-gradient(145deg, rgba(255,255,255,0.06), rgba(0,0,0,0.35));
-    box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+    grid-template-columns: repeat(4, minmax(110px, 1fr));
+    gap: clamp(12px, 2vw, 18px);
+  }
+  .chord-btn {
+    position: relative;
+    height: clamp(110px, 16vw, 160px);
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)),
+                linear-gradient(180deg, #121725, #0a0d17);
+    border: 1px solid rgba(0,0,0,0.6);
+    box-shadow:
+      inset 0 2px 3px rgba(255,255,255,0.08),
+      inset 0 -10px 18px rgba(0,0,0,0.7),
+      0 12px 20px rgba(0,0,0,0.6);
+    display: grid;
+    place-items: center;
+    font-size: 26px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.95);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    cursor: pointer;
     overflow: hidden;
   }
-  .app .pad-surface::before {
+  .chord-btn::after {
     content: "";
     position: absolute;
-    inset: 0;
-    border-radius: 20px;
-    background: linear-gradient(145deg, rgba(255,255,255,0.06), rgba(0,0,0,0.2));
-    pointer-events: none;
-  }
-  @supports (backdrop-filter: blur(6px)) {
-    .app .pad-surface {
-      backdrop-filter: blur(6px);
-    }
-  }
-  .app .pad {
-    position: relative;
-    background: linear-gradient(180deg, #1a1e26, #0e1118);
-    border: 1px solid rgba(0,0,0,0.7);
-    border-radius: 16px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    font-size: clamp(16px, 2vw, 22px);
-    color: rgba(255,255,255,0.85);
-    user-select: none;
-    box-shadow:
-      inset 0 1px 1px rgba(255,255,255,0.05),
-      inset 0 -10px 14px rgba(0,0,0,0.75),
-      0 10px 16px rgba(0,0,0,0.6);
-    transition: transform 0.1s ease, box-shadow 0.1s ease, color 0.1s ease, opacity 0.1s ease;
-    overflow: visible;
-    z-index: 0;
-  }
-  .app .pad::before {
-    content: "";
-    position: absolute;
-    inset: clamp(6px, 1.2vw, 12px);
-    border-radius: 12px;
-    background: linear-gradient(180deg, #0f121a, #0b0e15);
-    box-shadow: inset 0 1px 2px rgba(255,255,255,0.08),
-                inset 0 -6px 10px rgba(0,0,0,0.6);
-    pointer-events: none;
-  }
-  .app .pad::after {
-    content: "";
-    position: absolute;
-    inset: -6px;
-    border-radius: 18px;
+    inset: -14px;
+    border-radius: 28px;
     background:
-      linear-gradient(180deg, rgba(0,0,0,0.7), rgba(0,0,0,0.1)),
-      linear-gradient(180deg, var(--led, #00e5ff), rgba(0,0,0,0.2));
-    box-shadow:
-      0 0 6px rgba(0,0,0,0.45),
-      inset 0 -6px 10px rgba(0,0,0,0.55);
+      linear-gradient(180deg, rgba(0,0,0,0.8), rgba(0,0,0,0.2)),
+      linear-gradient(180deg, var(--glow), rgba(0,0,0,0.2));
     opacity: 0.85;
-    filter: none;
-    pointer-events: none;
     z-index: -1;
   }
-  .app .pad:hover::after {
-    opacity: 1;
+  .chord-btn::before {
+    content: "";
+    position: absolute;
+    inset: 10px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #0f131d, #0b0f18);
+    box-shadow: inset 0 2px 3px rgba(255,255,255,0.06);
   }
-  .app .pad.active {
+  .chord-btn .label {
+    position: relative;
+    z-index: 1;
+  }
+  .chord-btn .hint {
+    position: absolute;
+    bottom: 12px;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    color: rgba(255,255,255,0.6);
+  }
+  .chord-btn .pulse-ring {
+    position: absolute;
+    inset: 14px;
+    border-radius: 18px;
+    border: 2px solid rgba(255,255,255,0.2);
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  .chord-btn.active {
     transform: translateY(3px) scale(0.99);
     box-shadow:
-      inset 0 1px 1px rgba(255,255,255,0.1),
-      inset 0 -6px 10px rgba(0,0,0,0.6),
-      0 4px 12px rgba(0,0,0,0.6);
+      inset 0 2px 3px rgba(255,255,255,0.08),
+      inset 0 -6px 12px rgba(0,0,0,0.7),
+      0 6px 16px rgba(0,0,0,0.55);
     animation: glowBreath 2.2s ease-in-out infinite;
   }
-  .app .pad.active::after {
-    opacity: 1;
-    box-shadow: 0 0 12px rgba(0,0,0,0.5);
+  .chord-btn.active .pulse-ring {
+    opacity: 0.6;
+    animation: pulseRing var(--beat) ease-in-out infinite;
   }
-  .app .pad .pad-ripple {
-    position: absolute;
-    inset: 10%;
-    border-radius: 12px;
-    background: radial-gradient(circle, var(--led, #00e5ff) 0%, transparent 60%);
-    opacity: 0;
-    transform: scale(0.5);
-    pointer-events: none;
-  }
-  .app .pad.hit .pad-ripple {
-    animation: padRipple 0.35s ease-out;
-  }
-  .app .pad .pad-indicator {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--led, #00e5ff);
-    opacity: 0;
-    transform: scale(0.6);
-    box-shadow: 0 0 6px rgba(0,0,0,0.4);
-  }
-  .app .pad.running .pad-indicator {
-    opacity: 0.7;
-  }
-  .app .pad.step .pad-indicator {
-    animation: stepPulse 0.18s ease-out;
-  }
-  .app .pad-number {
-    font-weight: 600;
-    text-shadow: 0 0 6px rgba(0,0,0,0.6);
-  }
-  .app .pad-label {
-    font-size: 11px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-  .app .pad-icon {
-    position: absolute;
-    inset: 0;
-    margin: auto;
-    width: clamp(44px, 8vw, 70px);
-    height: clamp(44px, 8vw, 70px);
-    opacity: 0.85;
-  }
-  .app .pad-icon svg {
-    width: 100%;
-    height: 100%;
-    stroke: rgba(255,255,255,0.7);
-    stroke-width: 1.8;
-    fill: none;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-  .app .diagnostics {
-    background: var(--panel);
+
+  .side-panel {
+    background: rgba(13,19,38,0.7);
     border: 1px solid rgba(255,255,255,0.12);
-    border-top: 2px solid rgba(0,229,255,0.5);
-    border-radius: 14px;
-    padding: 12px;
-    height: min(70vh, 70vw, 520px);
-    overflow: hidden;
+    border-radius: 18px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 14px;
+  }
+  .microcopy {
     font-size: 12px;
-  }
-  .diagnostics pre {
-    flex: 1;
-    margin: 0;
-    background: linear-gradient(transparent 50%, rgba(255,255,255,0.03) 50%),
-                repeating-linear-gradient(0deg, rgba(0,0,0,0.2), rgba(0,0,0,0.2) 2px, transparent 2px, transparent 4px);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 8px;
-    padding: 8px;
-    color: var(--ink);
-    overflow: auto;
-    font-family: "SFMono-Regular", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  }
-  .status {
     color: var(--muted);
+  }
+  .slider-group {
+    display: grid;
+    gap: 8px;
+  }
+  .slider-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+  }
+  .slider-label {
     font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
-  @media (prefers-reduced-motion: reduce) {
-    .app .pad::before { transition: none; }
-    .app .pad::after { transition: none; }
-    .app .pad.hit .pad-ripple { animation: none; opacity: 0; }
-    .app .pad.step .pad-indicator { animation: none; }
-    .app .pad.active { animation: none; }
+  .slider-value {
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
   }
-  .app .pad:focus-visible {
-    outline: 2px solid rgba(255,255,255,0.6);
-    outline-offset: 3px;
+  input[type="range"] {
+    width: 100%;
+    accent-color: #00e5ff;
   }
-  .app .pad:nth-child(8n+1) { --led: #ff4d4d; }
-  .app .pad:nth-child(8n+2) { --led: #ff7a1a; }
-  .app .pad:nth-child(8n+3) { --led: #ffd24a; }
-  .app .pad:nth-child(8n+4) { --led: #7CFF4E; }
-  .app .pad:nth-child(8n+5) { --led: #00e5ff; }
-  .app .pad:nth-child(8n+6) { --led: #4d7dff; }
-  .app .pad:nth-child(8n+7) { --led: #8a5cff; }
-  .app .pad:nth-child(8n) { --led: #ff2dff; }
-  @media (max-width: 860px) {
-    .layout {
-      grid-template-columns: 1fr;
-      justify-items: center;
-    }
-    .diagnostics {
-      width: min(90vw, 520px);
-      height: 220px;
-    }
+  .indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--muted);
   }
-  @media (orientation: portrait) {
-    .app .pad-surface {
-      width: min(94vw, 94vh);
-    }
+  .tempo-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #00e5ff;
+    animation: tempoBounce var(--beat) linear infinite;
   }
-  @media (orientation: landscape) and (max-height: 540px) {
-    .app .pad-surface {
-      width: min(90vw, 90vh);
-      padding: clamp(12px, 2vw, 18px);
-      gap: clamp(10px, 1.8vw, 14px);
-    }
+  .groove-wobble {
+    width: 18px;
+    height: 6px;
+    border-radius: 999px;
+    background: #ff2dff;
+    animation: grooveWobble 0.8s ease-in-out infinite;
+    transform-origin: center;
   }
-  @keyframes padRipple {
-    0% { transform: scale(0.5); opacity: 0.45; }
-    100% { transform: scale(1.25); opacity: 0; }
+  .density-dots span {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-right: 2px;
+    border-radius: 50%;
+    background: #7CFF4E;
+    opacity: 0.2;
+    transition: opacity 0.2s ease;
   }
-  @keyframes stepPulse {
-    0% { transform: scale(0.6); opacity: 0.4; }
-    100% { transform: scale(1.4); opacity: 0; }
+  .density-dots[data-level="1"] span:nth-child(-n+1),
+  .density-dots[data-level="2"] span:nth-child(-n+2),
+  .density-dots[data-level="3"] span:nth-child(-n+3),
+  .density-dots[data-level="4"] span:nth-child(-n+4) {
+    opacity: 0.8;
+  }
+  .magic-shimmer {
+    width: 24px;
+    height: 10px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, rgba(255,210,74,0.3), rgba(255,210,74,0.9));
+    animation: shimmer 1.4s ease-in-out infinite;
+    opacity: calc(0.3 + var(--magic));
+  }
+
+  @keyframes pulseRing {
+    0% { transform: scale(0.94); opacity: 0.55; }
+    50% { transform: scale(1.03); opacity: 0.2; }
+    100% { transform: scale(0.94); opacity: 0.55; }
   }
   @keyframes glowBreath {
     0%, 100% { opacity: 1; }
-    50% { opacity: 0.8; }
+    50% { opacity: 0.75; }
+  }
+  @keyframes tempoBounce {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+    100% { transform: translateY(0); }
+  }
+  @keyframes grooveWobble {
+    0% { transform: rotate(-6deg) scaleX(0.9); }
+    50% { transform: rotate(6deg) scaleX(1.1); }
+    100% { transform: rotate(-6deg) scaleX(0.9); }
+  }
+  @keyframes shimmer {
+    0% { transform: translateX(-2px); opacity: 0.4; }
+    50% { transform: translateX(2px); opacity: 0.9; }
+    100% { transform: translateX(-2px); opacity: 0.4; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .chord-btn.active { animation: none; }
+    .chord-btn.active .pulse-ring { animation: none; }
+    .tempo-dot, .groove-wobble, .magic-shimmer { animation: none; }
+  }
+  @media (max-width: 980px) {
+    .layout { grid-template-columns: 1fr; }
+    .side-panel { width: min(100%, 420px); margin: 0 auto; }
   }
 </style>
 </head>
 <body>
-  <div class="app">
-    <div class="top-bar">
-      <button id="unlockBtn">Unlock Audio</button>
-      <button id="testBtn">Test: play 4 notes</button>
-      <button id="panicBtn">Panic / Stop</button>
-      <div class="tempo-controls">
-        <label class="control-label" for="tempoSlider">BPM</label>
-        <input id="tempoSlider" type="range" min="60" max="180" value="120" />
-        <span id="tempoValue" class="control-value">120</span>
+  <div class="app" id="app">
+    <header>
+      <div class="title">Pop Parts for Kids</div>
+      <div class="controls">
+        <button id="unlockBtn">Unlock Audio</button>
+        <button id="panicBtn">Panic</button>
       </div>
-      <label class="toggle">
-        <input id="swingToggle" type="checkbox" checked />
-        <span>Swing 55%</span>
-      </label>
-      <label class="toggle">
-        <input id="quantizeToggle" type="checkbox" checked />
-        <span>Quantize</span>
-      </label>
-      <label class="toggle">
-        <span>Key</span>
-        <select id="keySelect" disabled>
-          <option value="C">C</option>
-        </select>
-      </label>
-    </div>
+    </header>
+
     <div class="layout">
-      <div id="padSurface" class="pad-surface" aria-label="Pad grid"></div>
-      <div class="diagnostics">
-        <div class="status" id="audioStatus">Audio: locked</div>
-        <div class="status" id="eventStatus">Events: idle</div>
-        <pre id="diagOutput"></pre>
+      <div class="chord-grid" id="chordGrid">
+        <button class="chord-btn" data-chord="C" style="--glow: #00e5ff;"><span class="label">C</span><span class="hint">Happy</span><span class="pulse-ring"></span></button>
+        <button class="chord-btn" data-chord="G" style="--glow: #2dfcff;"><span class="label">G</span><span class="hint">Bright</span><span class="pulse-ring"></span></button>
+        <button class="chord-btn" data-chord="Am" style="--glow: #4d7dff;"><span class="label">Am</span><span class="hint">Dreamy</span><span class="pulse-ring"></span></button>
+        <button class="chord-btn" data-chord="F" style="--glow: #ff2dff;"><span class="label">F</span><span class="hint">Warm</span><span class="pulse-ring"></span></button>
+        <button class="chord-btn" data-chord="Dm" style="--glow: #7CFF4E;"><span class="label">Dm</span><span class="hint">Soft</span><span class="pulse-ring"></span></button>
+        <button class="chord-btn" data-chord="Em" style="--glow: #00ffa6;"><span class="label">Em</span><span class="hint">Cool</span><span class="pulse-ring"></span></button>
+        <button class="chord-btn" data-chord="G/B" style="--glow: #ffd24a;"><span class="label">G/B</span><span class="hint">Lift</span><span class="pulse-ring"></span></button>
+        <button class="chord-btn" data-chord="C/E" style="--glow: #ff9a4a;"><span class="label">C/E</span><span class="hint">Glow</span><span class="pulse-ring"></span></button>
+      </div>
+
+      <div class="side-panel">
+        <div class="microcopy">? Hold a chord to hear it evolve.</div>
+
+        <div class="slider-group">
+          <div class="slider-row">
+            <div class="slider-label">Tempo</div>
+            <div class="slider-value" id="tempoValue">120</div>
+          </div>
+          <input id="tempoSlider" type="range" min="80" max="160" value="120" />
+          <div class="indicator"><span class="tempo-dot"></span> Speed</div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-row">
+            <div class="slider-label">Groove</div>
+            <div class="slider-value" id="grooveValue">Bouncy</div>
+          </div>
+          <input id="grooveSlider" type="range" min="0" max="100" value="60" />
+          <div class="indicator"><span class="groove-wobble"></span> Feel</div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-row">
+            <div class="slider-label">Density</div>
+            <div class="slider-value" id="densityValue">Simple</div>
+          </div>
+          <input id="densitySlider" type="range" min="0" max="100" value="25" />
+          <div class="indicator density-dots" id="densityDots" data-level="1">
+            <span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-row">
+            <div class="slider-label">Magic</div>
+            <div class="slider-value" id="magicValue">Clean</div>
+          </div>
+          <input id="magicSlider" type="range" min="0" max="100" value="10" />
+          <div class="indicator"><span class="magic-shimmer"></span> Sparkle</div>
+        </div>
       </div>
     </div>
   </div>
 
 <script>
 (() => {
-  const padSurface = document.getElementById("padSurface");
-  const diagOutput = document.getElementById("diagOutput");
-  const audioStatus = document.getElementById("audioStatus");
-  const eventStatus = document.getElementById("eventStatus");
+  const chordButtons = Array.from(document.querySelectorAll(".chord-btn"));
   const unlockBtn = document.getElementById("unlockBtn");
-  const testBtn = document.getElementById("testBtn");
   const panicBtn = document.getElementById("panicBtn");
   const tempoSlider = document.getElementById("tempoSlider");
   const tempoValue = document.getElementById("tempoValue");
-  const swingToggle = document.getElementById("swingToggle");
-  const quantizeToggle = document.getElementById("quantizeToggle");
-  const keySelect = document.getElementById("keySelect");
-
-  const pads = [];
-  const activePadCounts = new Map();
-  const pointerContacts = new Map();
-  const touchContacts = new Map();
-  const activeVoices = new Set();
-  const activePatterns = new Set();
+  const grooveSlider = document.getElementById("grooveSlider");
+  const grooveValue = document.getElementById("grooveValue");
+  const densitySlider = document.getElementById("densitySlider");
+  const densityValue = document.getElementById("densityValue");
+  const densityDots = document.getElementById("densityDots");
+  const magicSlider = document.getElementById("magicSlider");
+  const magicValue = document.getElementById("magicValue");
+  const app = document.getElementById("app");
 
   let audioCtx = null;
   let masterGain = null;
@@ -426,70 +365,45 @@
   let saturator = null;
   let compressor = null;
   let delaySend = null;
-  let verbSend = null;
   let delayNode = null;
   let delayFeedback = null;
   let delayFilter = null;
-  let verbFilter = null;
   let noiseBuffer = null;
 
-  const chordMap = ["C", "G", "Am", "F"];
-  const padConfig = [
-    { name: "C", role: "chord", behavior: "hold", color: "#00e5ff" },
-    { name: "G", role: "chord", behavior: "hold", color: "#14f0ff" },
-    { name: "Am", role: "chord", behavior: "hold", color: "#00c9e6" },
-    { name: "F", role: "chord", behavior: "hold", color: "#00b5d4" },
-    { name: "Kick", role: "drum", behavior: "oneshot", color: "#ff2dff" },
-    { name: "Snare", role: "drum", behavior: "oneshot", color: "#ff4dff" },
-    { name: "Hat", role: "drum", behavior: "oneshot", color: "#ff2dc2" },
-    { name: "Open", role: "drum", behavior: "oneshot", color: "#ff5fe6" },
-    { name: "Bass", role: "bass", behavior: "hold", color: "#7CFF4E" },
-    { name: "Fifth", role: "bass", behavior: "hold", color: "#9bff6a" },
-    { name: "Pulse", role: "bass", behavior: "pattern", color: "#6be64a" },
-    { name: "Chop", role: "bass", behavior: "pattern", color: "#5cd43c" },
-    { name: "Impact", role: "fx", behavior: "oneshot", color: "#ffd24a" },
-    { name: "Riser", role: "fx", behavior: "oneshot", color: "#ffca3a" },
-    { name: "Reverse", role: "fx", behavior: "oneshot", color: "#ffc24a" },
-    { name: "Vox", role: "fx", behavior: "oneshot", color: "#ffb84a" }
-  ];
-  const padIcons = [
-    "bear", "wolf", "bear", "lion",
-    "boar", "bear", "mouse", "mouse",
-    "bear", "bear", "owl", "owl",
-    "bear", "hawk", "hawk", "mouse"
-  ];
-
-  const chordNotes = {
-    C: [60, 64, 67, 72],
-    G: [55, 59, 62, 67],
-    Am: [57, 60, 64, 69],
-    F: [53, 57, 60, 65]
-  };
-  const chordRoots = {
-    C: 36,
-    G: 31,
-    Am: 33,
-    F: 29
-  };
-  const leadScale = [60, 62, 64, 67, 69, 72, 74, 76];
-
   let bpm = 120;
-  let currentChord = "C";
-  let swingEnabled = true;
-  let quantizeEnabled = true;
+  let groove = 0.55;
+  let density = 0.25;
+  let magic = 0.1;
+
+  let currentChordVoice = null;
+  let currentChordName = null;
+  let beatRunning = false;
+  let schedulerTimer = null;
+  let nextStepTime = 0;
+  let stepIndex = 0;
+
+  const chordMap = {
+    "C": [60, 64, 67, 72],
+    "G": [55, 59, 62, 67],
+    "Am": [57, 60, 64, 69],
+    "F": [53, 57, 60, 65],
+    "Dm": [50, 53, 57, 62],
+    "Em": [52, 55, 59, 64],
+    "G/B": [59, 62, 67, 71],
+    "C/E": [52, 55, 60, 64]
+  };
 
   function ensureAudio() {
     if (!audioCtx) {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      setupMasterChain();
+      setupAudioChain();
     }
     if (audioCtx.state === "suspended") {
       audioCtx.resume();
     }
-    audioStatus.textContent = `Audio: ${audioCtx.state}`;
   }
 
-  function setupMasterChain() {
+  function setupAudioChain() {
     masterBus = audioCtx.createGain();
     masterBus.gain.value = 1;
 
@@ -501,28 +415,21 @@
     saturator.oversample = "2x";
 
     compressor = audioCtx.createDynamicsCompressor();
-    compressor.threshold.value = -16;
-    compressor.knee.value = 18;
-    compressor.ratio.value = 2.5;
-    compressor.attack.value = 0.01;
+    compressor.threshold.value = -18;
+    compressor.knee.value = 20;
+    compressor.ratio.value = 2.2;
+    compressor.attack.value = 0.008;
     compressor.release.value = 0.12;
 
     delaySend = audioCtx.createGain();
     delaySend.gain.value = 0.08;
-    verbSend = audioCtx.createGain();
-    verbSend.gain.value = 0.08;
-
     delayNode = audioCtx.createDelay(0.6);
-    delayNode.delayTime.value = 0.22;
+    delayNode.delayTime.value = 0.25;
     delayFeedback = audioCtx.createGain();
-    delayFeedback.gain.value = 0.28;
+    delayFeedback.gain.value = 0.25;
     delayFilter = audioCtx.createBiquadFilter();
     delayFilter.type = "lowpass";
-    delayFilter.frequency.value = 2200;
-
-    verbFilter = audioCtx.createBiquadFilter();
-    verbFilter.type = "lowpass";
-    verbFilter.frequency.value = 2500;
+    delayFilter.frequency.value = 2600;
 
     masterBus.connect(saturator);
     saturator.connect(compressor);
@@ -535,19 +442,6 @@
     delayFilter.connect(compressor);
     delayNode.connect(delayFeedback);
     delayFeedback.connect(delayNode);
-
-    masterBus.connect(verbSend);
-    const taps = [0.03, 0.05, 0.08, 0.12, 0.16];
-    taps.forEach((time, i) => {
-      const d = audioCtx.createDelay(0.4);
-      const g = audioCtx.createGain();
-      d.delayTime.value = time;
-      g.gain.value = 0.25 / (i + 1);
-      verbSend.connect(d);
-      d.connect(g);
-      g.connect(verbFilter);
-    });
-    verbFilter.connect(compressor);
 
     noiseBuffer = createNoiseBuffer();
   }
@@ -576,11 +470,18 @@
     return 440 * Math.pow(2, (midi - 69) / 12);
   }
 
-  function createNoiseBurst(time, duration, gainValue, type = "bandpass", freq = 2000) {
+  function updateMagic() {
+    const drive = 0.15 + magic * 0.5;
+    if (saturator) saturator.curve = makeSaturationCurve(drive);
+    if (delaySend) delaySend.gain.value = 0.05 + magic * 0.08;
+    app.style.setProperty("--magic", magic.toFixed(2));
+  }
+
+  function createNoiseBurst(time, duration, gainValue, freq) {
     const noise = audioCtx.createBufferSource();
     noise.buffer = noiseBuffer;
     const filter = audioCtx.createBiquadFilter();
-    filter.type = type;
+    filter.type = "bandpass";
     filter.frequency.value = freq;
     const gain = audioCtx.createGain();
     gain.gain.setValueAtTime(gainValue, time);
@@ -590,60 +491,78 @@
     gain.connect(masterBus);
     noise.start(time);
     noise.stop(time + duration + 0.02);
-    return { noise, gain };
   }
 
-  function startSustainOsc(frequency, gainValue, when, type = "sawtooth") {
-    ensureAudio();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
+  function createChordVoice(chordName) {
+    const now = audioCtx.currentTime;
+    const notes = chordMap[chordName] || chordMap.C;
+    const voiceGain = audioCtx.createGain();
+    voiceGain.gain.setValueAtTime(0.0001, now);
+    voiceGain.gain.linearRampToValueAtTime(0.5, now + 0.04);
+
     const filter = audioCtx.createBiquadFilter();
-    osc.type = type;
-    osc.frequency.value = frequency;
     filter.type = "lowpass";
-    filter.frequency.value = 1400;
-    filter.Q.value = 0.4;
-    osc.connect(filter);
-    filter.connect(gain);
-    gain.connect(masterBus);
+    filter.frequency.setValueAtTime(1400, now);
+    filter.frequency.linearRampToValueAtTime(2200, now + 1.5);
 
-    gain.gain.setValueAtTime(0.0001, when);
-    gain.gain.linearRampToValueAtTime(gainValue, when + 0.01);
-    filter.frequency.setValueAtTime(1400, when);
-    filter.frequency.linearRampToValueAtTime(2200, when + 0.8);
-    osc.start(when);
+    const lfo = audioCtx.createOscillator();
+    const lfoGain = audioCtx.createGain();
+    lfo.frequency.value = 0.35 + magic * 0.6;
+    lfoGain.gain.value = 60 + magic * 120;
+    lfo.connect(lfoGain);
+    lfoGain.connect(filter.frequency);
 
-    return { osc, gain, filter };
-  }
+    const shimmerGain = audioCtx.createGain();
+    shimmerGain.gain.setValueAtTime(0.0001, now + 1.5);
+    shimmerGain.gain.linearRampToValueAtTime(0.12 + magic * 0.18, now + 3);
 
-  function playChordHold(chordName) {
-    const when = audioCtx.currentTime;
-    const notes = chordNotes[chordName] || chordNotes.C;
-    const offsets = [0, 0.012, 0.022, 0.035];
-    const voices = notes.map((midi, i) => {
-      const time = when + offsets[i % offsets.length];
-      const { osc, gain, filter } = startSustainOsc(midiToFreq(midi), 0.18, time, "triangle");
-      gain.gain.setValueAtTime(0.0001, time);
-      gain.gain.linearRampToValueAtTime(0.35, time + 0.012);
-      gain.gain.exponentialRampToValueAtTime(0.22, time + 0.35);
-      return { osc, gain, filter };
+    const nodes = notes.map((midi, i) => {
+      const osc = audioCtx.createOscillator();
+      const osc2 = audioCtx.createOscillator();
+      const pan = audioCtx.createStereoPanner();
+      const detune = (i % 2 === 0 ? -6 : 6) * (1 + magic * 0.5);
+      osc.type = "triangle";
+      osc.frequency.value = midiToFreq(midi);
+      osc.detune.value = detune;
+      osc2.type = "sawtooth";
+      osc2.frequency.value = midiToFreq(midi);
+      osc2.detune.value = detune * 0.4;
+      pan.pan.value = (i - 1.5) * 0.2;
+      osc.connect(pan);
+      osc2.connect(pan);
+      pan.connect(filter);
+      osc.start(now + i * 0.012);
+      osc2.start(now + i * 0.012);
+      return { osc, osc2 };
     });
-    createNoiseBurst(when, 0.08, 0.2, "bandpass", 2200);
-    const voice = {
-      type: "chord",
-      voices,
-      stop(release = 0.18) {
-        const now = audioCtx.currentTime;
-        voices.forEach(({ osc, gain }) => {
-          gain.gain.cancelScheduledValues(now);
-          gain.gain.setValueAtTime(Math.max(gain.gain.value, 0.0001), now);
-          gain.gain.exponentialRampToValueAtTime(0.0001, now + release);
-          osc.stop(now + release + 0.04);
+
+    const shimmerOsc = audioCtx.createOscillator();
+    shimmerOsc.type = "triangle";
+    shimmerOsc.frequency.value = midiToFreq(notes[0] + 12);
+    shimmerOsc.connect(shimmerGain);
+    shimmerGain.connect(filter);
+    shimmerOsc.start(now + 1.5);
+
+    filter.connect(voiceGain);
+    voiceGain.connect(masterBus);
+
+    createNoiseBurst(now, 0.06, 0.2, 2200);
+    lfo.start(now + 1.5);
+
+    return {
+      stop(release = 0.16) {
+        const t = audioCtx.currentTime;
+        voiceGain.gain.cancelScheduledValues(t);
+        voiceGain.gain.setValueAtTime(Math.max(voiceGain.gain.value, 0.0001), t);
+        voiceGain.gain.exponentialRampToValueAtTime(0.0001, t + release);
+        nodes.forEach(({ osc, osc2 }) => {
+          osc.stop(t + release + 0.05);
+          osc2.stop(t + release + 0.05);
         });
+        shimmerOsc.stop(t + release + 0.05);
+        lfo.stop(t + release + 0.05);
       }
     };
-    activeVoices.add(voice);
-    return voice;
   }
 
   function playKick(time) {
@@ -658,8 +577,7 @@
     gain.connect(masterBus);
     osc.start(time);
     osc.stop(time + 0.18);
-    createNoiseBurst(time, 0.02, 0.15, "highpass", 1800);
-    duckOnKick(time);
+    createNoiseBurst(time, 0.02, 0.12, 1800);
   }
 
   function playSnare(time) {
@@ -668,584 +586,176 @@
     osc.type = "triangle";
     osc.frequency.setValueAtTime(190, time);
     gain.gain.setValueAtTime(0.2, time);
-    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.2);
+    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.18);
     osc.connect(gain);
     gain.connect(masterBus);
     osc.start(time);
-    osc.stop(time + 0.22);
+    osc.stop(time + 0.2);
     [0, 0.015, 0.03].forEach((offset, i) => {
-      createNoiseBurst(time + offset, 0.12, 0.25 - i * 0.05, "bandpass", 1800);
+      createNoiseBurst(time + offset, 0.12, 0.22 - i * 0.04, 1800);
     });
   }
 
-  function playHatClosed(time) {
-    createNoiseBurst(time, 0.06, 0.12, "highpass", 6000);
-  }
-
-  function playHatOpen(time) {
-    createNoiseBurst(time, 0.24, 0.16, "highpass", 5200);
-  }
-
-  function playImpact(time) {
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(70, time);
-    osc.frequency.exponentialRampToValueAtTime(30, time + 0.2);
-    gain.gain.setValueAtTime(0.7, time);
-    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.3);
-    osc.connect(gain);
-    gain.connect(masterBus);
-    osc.start(time);
-    osc.stop(time + 0.35);
-    createNoiseBurst(time, 0.2, 0.12, "lowpass", 800);
-  }
-
-  function playRiser(time, length) {
+  function playHat(time, length) {
     const noise = audioCtx.createBufferSource();
     noise.buffer = noiseBuffer;
     const filter = audioCtx.createBiquadFilter();
     filter.type = "highpass";
-    filter.frequency.setValueAtTime(300, time);
-    filter.frequency.exponentialRampToValueAtTime(4000, time + length);
+    filter.frequency.value = 5200;
     const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.0001, time);
-    gain.gain.linearRampToValueAtTime(0.35, time + length);
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(masterBus);
-    noise.start(time);
-    noise.stop(time + length + 0.05);
-  }
-
-  function playReverse(time, length) {
-    const noise = audioCtx.createBufferSource();
-    noise.buffer = noiseBuffer;
-    const filter = audioCtx.createBiquadFilter();
-    filter.type = "bandpass";
-    filter.frequency.setValueAtTime(1200, time);
-    const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.35, time);
+    gain.gain.setValueAtTime(0.08 + density * 0.08, time);
     gain.gain.exponentialRampToValueAtTime(0.0001, time + length);
     noise.connect(filter);
     filter.connect(gain);
     gain.connect(masterBus);
     noise.start(time);
-    noise.stop(time + length + 0.05);
+    noise.stop(time + length + 0.02);
   }
 
-  function playVoxChop(time) {
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    const filter = audioCtx.createBiquadFilter();
-    osc.type = "square";
-    const note = leadScale[Math.floor(Math.random() * leadScale.length)];
-    osc.frequency.value = midiToFreq(note);
-    filter.type = "bandpass";
-    filter.frequency.value = 900;
-    filter.Q.value = 8;
-    gain.gain.setValueAtTime(0.0001, time);
-    gain.gain.linearRampToValueAtTime(0.3, time + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.2);
-    osc.connect(filter);
-    filter.connect(gain);
-    gain.connect(masterBus);
-    osc.start(time);
-    osc.stop(time + 0.3);
-  }
-  function iconSvg(name) {
-    const icons = {
-      mouse: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M5 13c0-3.3 3-6 7-6s7 2.7 7 6-3.1 5-7 5-7-1.7-7-5z"/><circle cx="10" cy="14" r="0.5"/><circle cx="14" cy="14" r="0.5"/><path d="M12 16c-1 0-1.5.5-2 1"/></svg>`,
-      owl: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10c0-2.2 1.8-4 4-4h8c2.2 0 4 1.8 4 4v4c0 3.3-3.1 6-7 6s-7-2.7-7-6z"/><circle cx="9" cy="11" r="1.5"/><circle cx="15" cy="11" r="1.5"/><path d="M12 13l1 2-2 0z"/></svg>`,
-      hawk: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14c4-6 12-6 16 0"/><path d="M7 14l-2 4"/><path d="M17 14l2 4"/><path d="M9 10c1-2 5-2 6 0"/><path d="M11 12l1 1 2-1"/></svg>`,
-      fox: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6l4 4"/><path d="M20 6l-4 4"/><path d="M6 10c0 4 3 7 6 7s6-3 6-7"/><path d="M9 14c1 1 2 1 3 1s2 0 3-1"/><circle cx="10" cy="12" r="0.5"/><circle cx="14" cy="12" r="0.5"/></svg>`,
-      bear: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7" cy="7" r="3"/><circle cx="17" cy="7" r="3"/><path d="M6 13c0-3.3 3-6 6-6s6 2.7 6 6-2.7 5-6 5-6-1.7-6-5z"/><circle cx="10" cy="14" r="0.6"/><circle cx="14" cy="14" r="0.6"/><path d="M12 15c-.8 0-1.4.6-1.6 1.2"/></svg>`,
-      wolf: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10l4-4 2 4 2-3 2 3 2-4 4 4"/><path d="M6 11c0 4 3 7 6 7s6-3 6-7"/><circle cx="10" cy="13" r="0.5"/><circle cx="14" cy="13" r="0.5"/><path d="M12 15l1 1-2 0z"/></svg>`,
-      lion: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9c2-3 10-3 12 0"/><path d="M6 9c-2 2-2 6 0 8"/><path d="M18 9c2 2 2 6 0 8"/><path d="M8 12c0 3 2 5 4 5s4-2 4-5"/><circle cx="10" cy="12" r="0.5"/><circle cx="14" cy="12" r="0.5"/><path d="M12 14l1 1-2 0z"/></svg>`,
-      boar: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12c2-4 6-6 8-6s6 2 8 6"/><path d="M6 12c0 4 3 7 6 7s6-3 6-7"/><path d="M9 14h6"/><circle cx="10" cy="13" r="0.4"/><circle cx="14" cy="13" r="0.4"/></svg>`
-    };
-    return icons[name] || icons.fox;
-  }
-
-  function startBassHold(isFifth = false) {
-    const rootMidi = chordRoots[currentChord] || chordRoots.C;
-    const midi = rootMidi + (isFifth ? 7 : 0);
-    const when = audioCtx.currentTime;
-    const osc = audioCtx.createOscillator();
-    const osc2 = audioCtx.createOscillator();
-    const filter = audioCtx.createBiquadFilter();
-    const gain = audioCtx.createGain();
-    osc.type = "sine";
-    osc2.type = "sawtooth";
-    osc.frequency.value = midiToFreq(midi);
-    osc2.frequency.value = midiToFreq(midi);
-    osc2.detune.value = -6;
-    filter.type = "lowpass";
-    filter.frequency.value = 220;
-    gain.gain.setValueAtTime(0.0001, when);
-    gain.gain.linearRampToValueAtTime(0.45, when + 0.02);
-    osc.connect(filter);
-    osc2.connect(filter);
-    filter.connect(gain);
-    gain.connect(masterBus);
-    osc.start(when);
-    osc2.start(when);
-    const voice = {
-      type: "bass",
-      osc,
-      osc2,
-      filter,
-      gain,
-      isFifth,
-      stop(release = 0.18) {
-        const now = audioCtx.currentTime;
-        gain.gain.cancelScheduledValues(now);
-        gain.gain.setValueAtTime(Math.max(gain.gain.value, 0.0001), now);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + release);
-        osc.stop(now + release + 0.04);
-        osc2.stop(now + release + 0.04);
-      },
-      retune() {
-        const root = chordRoots[currentChord] || chordRoots.C;
-        const midiNote = root + (isFifth ? 7 : 0);
-        const freq = midiToFreq(midiNote);
-        const now = audioCtx.currentTime;
-        osc.frequency.setTargetAtTime(freq, now, 0.05);
-        osc2.frequency.setTargetAtTime(freq, now, 0.05);
-      }
-    };
-    activeVoices.add(voice);
-    return voice;
-  }
-
-  function playBassPulse(time) {
-    const rootMidi = chordRoots[currentChord] || chordRoots.C;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    const filter = audioCtx.createBiquadFilter();
-    osc.type = "sine";
-    osc.frequency.value = midiToFreq(rootMidi);
-    filter.type = "lowpass";
-    filter.frequency.value = 200;
-    gain.gain.setValueAtTime(0.0001, time);
-    gain.gain.linearRampToValueAtTime(0.25, time + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.18);
-    osc.connect(filter);
-    filter.connect(gain);
-    gain.connect(masterBus);
-    osc.start(time);
-    osc.stop(time + 0.22);
-  }
-
-  function playChop(time) {
-    const notes = chordNotes[currentChord] || chordNotes.C;
-    const midi = notes[1] || 60;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    const filter = audioCtx.createBiquadFilter();
-    osc.type = "square";
-    osc.frequency.value = midiToFreq(midi);
-    filter.type = "bandpass";
-    filter.frequency.value = 1200;
-    filter.Q.value = 6;
-    gain.gain.setValueAtTime(0.0001, time);
-    gain.gain.linearRampToValueAtTime(0.22, time + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.12);
-    osc.connect(filter);
-    filter.connect(gain);
-    gain.connect(masterBus);
-    osc.start(time);
-    osc.stop(time + 0.2);
-  }
-
-  function duckOnKick(time) {
-    if (!masterGain) return;
-    masterGain.gain.cancelScheduledValues(time);
-    masterGain.gain.setValueAtTime(masterGain.gain.value, time);
-    masterGain.gain.linearRampToValueAtTime(0.58, time + 0.02);
-    masterGain.gain.linearRampToValueAtTime(0.65, time + 0.14);
-  }
-
-  function startPattern(padIndex, type) {
+  function scheduleBeat() {
     const scheduleAhead = 0.15;
-    const stepDur = type === "chop" ? (60 / bpm) / 4 : (60 / bpm) / 2;
-    const swing = swingEnabled ? 0.55 : 0.5;
-    let nextTime = audioCtx.currentTime;
-    if (quantizeEnabled) {
-      const grid = stepDur;
-      const offset = nextTime % grid;
-      nextTime = nextTime + (grid - offset);
-    }
-    let step = 0;
-    const pad = pads[padIndex];
-    pad.classList.add("running");
-    const state = {
-      stopRequested: false,
-      timer: null,
-      stop() {
-        this.stopRequested = true;
-        pad.classList.remove("running");
+    const stepDur = (60 / bpm) / 4;
+    const swingAmount = groove;
+
+    while (nextStepTime < audioCtx.currentTime + scheduleAhead) {
+      const step = stepIndex % 16;
+      const beat = step % 4;
+      const time = nextStepTime;
+
+      const kickOn1 = density > 0.25;
+      if (step === 0 || (kickOn1 && step === 8)) {
+        playKick(time);
       }
-    };
-    function schedule() {
-      if (state.stopRequested) return;
-      while (nextTime < audioCtx.currentTime + scheduleAhead) {
-        const isOff = step % 2 === 1;
-        const time = nextTime + (isOff ? (swing - 0.5) * stepDur : 0);
-        if (type === "pulse") {
-          playBassPulse(time);
-        } else {
-          playChop(time);
-        }
-        triggerStep(padIndex);
-        step += 1;
-        nextTime += stepDur;
+      if (step === 4 || step === 12) {
+        playSnare(time);
       }
-      state.timer = setTimeout(schedule, 25);
-    }
-    schedule();
-    activePatterns.add(state);
-    return state;
-  }
-
-  function releaseVoice(voice, release = 0.18) {
-    if (!voice) return;
-    voice.stop(release);
-    activeVoices.delete(voice);
-  }
-
-  function incrementPad(index) {
-    const count = (activePadCounts.get(index) || 0) + 1;
-    activePadCounts.set(index, count);
-    pads[index].classList.toggle("active", count > 0);
-  }
-
-  function decrementPad(index) {
-    if (index == null || index < 0) return;
-    const count = (activePadCounts.get(index) || 0) - 1;
-    if (count <= 0) {
-      activePadCounts.delete(index);
-      pads[index].classList.remove("active");
-    } else {
-      activePadCounts.set(index, count);
-    }
-  }
-
-  function triggerRipple(index) {
-    const pad = pads[index];
-    pad.classList.remove("hit");
-    void pad.offsetWidth;
-    pad.classList.add("hit");
-    setTimeout(() => pad.classList.remove("hit"), 380);
-  }
-
-  function triggerStep(index) {
-    const pad = pads[index];
-    pad.classList.remove("step");
-    void pad.offsetWidth;
-    pad.classList.add("step");
-    setTimeout(() => pad.classList.remove("step"), 200);
-  }
-
-  function triggerPad(index) {
-    if (index == null || index < 0) return null;
-    let voice = null;
-    if (index <= 3) {
-      currentChord = chordMap[index];
-      voice = playChordHold(currentChord);
-      retuneHeldBass();
-    } else if (index === 4) {
-      playKick(audioCtx.currentTime);
-    } else if (index === 5) {
-      playSnare(audioCtx.currentTime);
-    } else if (index === 6) {
-      playHatClosed(audioCtx.currentTime);
-    } else if (index === 7) {
-      playHatOpen(audioCtx.currentTime);
-    } else if (index === 8) {
-      voice = startBassHold(false);
-    } else if (index === 9) {
-      voice = startBassHold(true);
-    } else if (index === 10) {
-      voice = startPattern(index, "pulse");
-    } else if (index === 11) {
-      voice = startPattern(index, "chop");
-    } else if (index === 12) {
-      playImpact(audioCtx.currentTime);
-    } else if (index === 13) {
-      const length = (60 / bpm) * 2;
-      playRiser(audioCtx.currentTime, length);
-    } else if (index === 14) {
-      const length = (60 / bpm);
-      playReverse(audioCtx.currentTime, length);
-    } else if (index === 15) {
-      playVoxChop(audioCtx.currentTime);
-    }
-    incrementPad(index);
-    triggerRipple(index);
-    return voice;
-  }
-
-  function releaseContact(contact) {
-    if (!contact) return;
-    if (contact.voice) {
-      if (contact.behavior === "hold") {
-        releaseVoice(contact.voice);
-      } else if (contact.behavior === "pattern") {
-        contact.voice.stop();
-        activePatterns.delete(contact.voice);
+      const swingOffset = (step % 2 === 1) ? (swingAmount - 0.5) * stepDur : 0;
+      if (step % 2 === 0 || density > 0.35) {
+        const hatLen = density > 0.6 ? 0.14 : 0.08;
+        playHat(time + swingOffset, hatLen);
       }
-      contact.voice = null;
-    }
-    if (contact.padIndex != null && contact.padIndex >= 0) {
-      decrementPad(contact.padIndex);
-      contact.padIndex = -1;
-    }
-  }
-
-  function stopAllVoices() {
-    for (const voice of Array.from(activeVoices)) {
-      voice.stop(0.02);
-    }
-    activeVoices.clear();
-    for (const pattern of Array.from(activePatterns)) {
-      pattern.stop();
-    }
-    activePatterns.clear();
-  }
-
-  function panic() {
-    stopAllVoices();
-    pointerContacts.clear();
-    touchContacts.clear();
-    activePadCounts.clear();
-    pads.forEach(p => p.classList.remove("active", "running", "step", "hit"));
-    eventStatus.textContent = "Events: cleared";
-  }
-
-  function retuneHeldBass() {
-    const allContacts = [...pointerContacts.values(), ...touchContacts.values()];
-    allContacts.forEach(contact => {
-      if (contact.voice && contact.behavior === "hold" && contact.type === "bass") {
-        contact.voice.retune();
+      if (density > 0.7 && beat === 3) {
+        playHat(time + swingOffset + stepDur * 0.5, 0.05);
       }
+      if (density > 0.8 && step === 14) {
+        playSnare(time + 0.01);
+      }
+
+      nextStepTime += stepDur;
+      stepIndex += 1;
+    }
+
+    schedulerTimer = setTimeout(scheduleBeat, 25);
+  }
+
+  function startBeat() {
+    if (beatRunning) return;
+    beatRunning = true;
+    nextStepTime = audioCtx.currentTime + 0.05;
+    stepIndex = 0;
+    scheduleBeat();
+  }
+
+  function stopBeat() {
+    beatRunning = false;
+    if (schedulerTimer) clearTimeout(schedulerTimer);
+    schedulerTimer = null;
+  }
+
+  function stopAll() {
+    stopBeat();
+    if (currentChordVoice) {
+      currentChordVoice.stop(0.08);
+      currentChordVoice = null;
+    }
+    chordButtons.forEach(btn => btn.classList.remove("active"));
+  }
+
+  function setActiveChord(button, chordName) {
+    if (currentChordName === chordName) return;
+    const now = audioCtx.currentTime;
+    if (currentChordVoice) {
+      currentChordVoice.stop(0.14);
+    }
+    currentChordVoice = createChordVoice(chordName);
+    currentChordName = chordName;
+    chordButtons.forEach(btn => btn.classList.toggle("active", btn === button));
+  }
+
+  chordButtons.forEach(button => {
+    button.addEventListener("pointerdown", (e) => {
+      ensureAudio();
+      button.setPointerCapture(e.pointerId);
+      setActiveChord(button, button.dataset.chord);
+      startBeat();
     });
-  }
-
-  function getPadIndexFromClientXY(x, y) {
-    const rect = padSurface.getBoundingClientRect();
-    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
-      return -1;
-    }
-    const relX = (x - rect.left) / rect.width;
-    const relY = (y - rect.top) / rect.height;
-    const col = Math.min(3, Math.max(0, Math.floor(relX * 4)));
-    const row = Math.min(3, Math.max(0, Math.floor(relY * 4)));
-    return row * 4 + col;
-  }
-
-  function handlePointerDown(e) {
-    ensureAudio();
-    const padIndex = getPadIndexFromClientXY(e.clientX, e.clientY);
-    const voice = triggerPad(padIndex);
-    pointerContacts.set(e.pointerId, {
-      padIndex,
-      voice,
-      behavior: padConfig[padIndex]?.behavior || "oneshot",
-      type: padConfig[padIndex]?.role || "other",
-      x: e.clientX,
-      y: e.clientY
+    button.addEventListener("pointerup", () => {
+      if (currentChordVoice) currentChordVoice.stop(0.16);
+      currentChordVoice = null;
+      currentChordName = null;
+      chordButtons.forEach(btn => btn.classList.remove("active"));
     });
-    padSurface.setPointerCapture(e.pointerId);
-    eventStatus.textContent = `Pointer: down (id ${e.pointerId})`;
-  }
-
-  function handlePointerMove(e) {
-    if (!pointerContacts.has(e.pointerId)) return;
-    const contact = pointerContacts.get(e.pointerId);
-    const newPad = getPadIndexFromClientXY(e.clientX, e.clientY);
-    if (newPad !== contact.padIndex) {
-      releaseContact(contact);
-      if (newPad >= 0) {
-        contact.voice = triggerPad(newPad);
-        contact.behavior = padConfig[newPad]?.behavior || "oneshot";
-        contact.type = padConfig[newPad]?.role || "other";
-        contact.padIndex = newPad;
-      }
-    }
-    contact.x = e.clientX;
-    contact.y = e.clientY;
-    eventStatus.textContent = `Pointer: move (id ${e.pointerId})`;
-  }
-
-  function handlePointerUp(e) {
-    const contact = pointerContacts.get(e.pointerId);
-    releaseContact(contact);
-    pointerContacts.delete(e.pointerId);
-    eventStatus.textContent = `Pointer: up (id ${e.pointerId})`;
-  }
-
-  function handleTouchStart(e) {
-    ensureAudio();
-    e.preventDefault();
-    for (const touch of Array.from(e.changedTouches)) {
-      const padIndex = getPadIndexFromClientXY(touch.clientX, touch.clientY);
-      const voice = triggerPad(padIndex);
-      touchContacts.set(touch.identifier, {
-        padIndex,
-        voice,
-        behavior: padConfig[padIndex]?.behavior || "oneshot",
-        type: padConfig[padIndex]?.role || "other",
-        x: touch.clientX,
-        y: touch.clientY
-      });
-    }
-    eventStatus.textContent = "Touch: start";
-  }
-
-  function handleTouchMove(e) {
-    e.preventDefault();
-    for (const touch of Array.from(e.changedTouches)) {
-      const contact = touchContacts.get(touch.identifier);
-      if (!contact) continue;
-      const newPad = getPadIndexFromClientXY(touch.clientX, touch.clientY);
-      if (newPad !== contact.padIndex) {
-        releaseContact(contact);
-        if (newPad >= 0) {
-          contact.voice = triggerPad(newPad);
-          contact.behavior = padConfig[newPad]?.behavior || "oneshot";
-          contact.type = padConfig[newPad]?.role || "other";
-          contact.padIndex = newPad;
-        }
-      }
-      contact.x = touch.clientX;
-      contact.y = touch.clientY;
-    }
-    eventStatus.textContent = "Touch: move";
-  }
-
-  function handleTouchEnd(e) {
-    e.preventDefault();
-    for (const touch of Array.from(e.changedTouches)) {
-      const contact = touchContacts.get(touch.identifier);
-      releaseContact(contact);
-      touchContacts.delete(touch.identifier);
-    }
-    eventStatus.textContent = "Touch: end";
-  }
-
-  function formatDiagnostics() {
-    const pointerList = Array.from(pointerContacts.entries()).map(([id, c]) => {
-      const padLabel = c.padIndex >= 0 ? c.padIndex + 1 : "-";
-      return `P${id} @ ${Math.round(c.x)},${Math.round(c.y)} pad=${padLabel}`;
+    button.addEventListener("pointercancel", () => {
+      if (currentChordVoice) currentChordVoice.stop(0.12);
+      currentChordVoice = null;
+      currentChordName = null;
+      chordButtons.forEach(btn => btn.classList.remove("active"));
     });
-    const touchList = Array.from(touchContacts.entries()).map(([id, c]) => {
-      const padLabel = c.padIndex >= 0 ? c.padIndex + 1 : "-";
-      return `T${id} @ ${Math.round(c.x)},${Math.round(c.y)} pad=${padLabel}`;
+    button.addEventListener("mouseleave", () => {
+      if (currentChordVoice) currentChordVoice.stop(0.16);
+      currentChordVoice = null;
+      currentChordName = null;
+      chordButtons.forEach(btn => btn.classList.remove("active"));
     });
-    const activePads = Array.from(activePadCounts.keys()).sort((a, b) => a - b).map(i => i + 1);
-    const totalContacts = pointerContacts.size + touchContacts.size;
-
-    return [
-      `Active contacts: ${totalContacts} (pointer ${pointerContacts.size}, touch ${touchContacts.size})`,
-      `BPM: ${bpm} | Swing: ${swingEnabled ? "on" : "off"} | Quantize: ${quantizeEnabled ? "on" : "off"}`,
-      `Chord: ${currentChord}`,
-      "",
-      "Pointer contacts:",
-      pointerList.length ? pointerList.join("\\n") : "(none)",
-      "",
-      "Touch contacts:",
-      touchList.length ? touchList.join("\\n") : "(none)",
-      "",
-      `Pressed pads: ${activePads.length ? activePads.join(", ") : "(none)"}`
-    ].join("\\n");
-  }
-
-  function tickDiagnostics() {
-    diagOutput.textContent = formatDiagnostics();
-  }
-
-  function playTestNotes() {
-    ensureAudio();
-    const indices = [0, 5, 10, 15];
-    indices.forEach((index, i) => {
-      const voice = triggerPad(index);
-      setTimeout(() => {
-        if (voice && padConfig[index]?.behavior === "hold") releaseVoice(voice, 0.1);
-        decrementPad(index);
-      }, 220 + i * 30);
-    });
-  }
-
-  function setupPads() {
-    for (let i = 0; i < 16; i++) {
-      const pad = document.createElement("div");
-      pad.className = "pad";
-      pad.dataset.index = String(i);
-      pad.tabIndex = 0;
-      const number = document.createElement("div");
-      number.className = "pad-number";
-      number.textContent = String(i + 1);
-      pad.appendChild(number);
-      const label = document.createElement("div");
-      label.className = "pad-label";
-      label.textContent = padConfig[i].name;
-      pad.appendChild(label);
-      const icon = document.createElement("div");
-      icon.className = "pad-icon";
-      icon.innerHTML = iconSvg(padIcons[i]);
-      pad.appendChild(icon);
-      const ripple = document.createElement("div");
-      ripple.className = "pad-ripple";
-      pad.appendChild(ripple);
-      const indicator = document.createElement("div");
-      indicator.className = "pad-indicator";
-      pad.appendChild(indicator);
-      pad.style.setProperty("--led", padConfig[i].color);
-      pads.push(pad);
-      padSurface.appendChild(pad);
-    }
-  }
+  });
 
   unlockBtn.addEventListener("click", () => {
     ensureAudio();
-    audioStatus.textContent = `Audio: ${audioCtx.state}`;
+    startBeat();
+  });
+
+  panicBtn.addEventListener("click", () => {
+    stopAll();
   });
 
   tempoSlider.addEventListener("input", (e) => {
     bpm = Number(e.target.value);
     tempoValue.textContent = String(bpm);
+    app.style.setProperty("--beat", `${60 / bpm}s`);
   });
-  swingToggle.addEventListener("change", (e) => {
-    swingEnabled = e.target.checked;
+
+  grooveSlider.addEventListener("input", (e) => {
+    const value = Number(e.target.value);
+    groove = 0.5 + (value / 100) * 0.12;
+    grooveValue.textContent = value < 40 ? "Straight" : value < 70 ? "Bouncy" : "Wiggly";
+    app.style.setProperty("--groove", (value / 100).toFixed(2));
   });
-  quantizeToggle.addEventListener("change", (e) => {
-    quantizeEnabled = e.target.checked;
+
+  densitySlider.addEventListener("input", (e) => {
+    const value = Number(e.target.value);
+    density = value / 100;
+    densityValue.textContent = value < 40 ? "Simple" : value < 70 ? "Fun" : "Busy";
+    densityDots.dataset.level = value < 25 ? "1" : value < 50 ? "2" : value < 75 ? "3" : "4";
   });
-  keySelect.addEventListener("change", () => {});
 
-  testBtn.addEventListener("click", playTestNotes);
-  panicBtn.addEventListener("click", panic);
+  magicSlider.addEventListener("input", (e) => {
+    const value = Number(e.target.value);
+    magic = value / 100;
+    magicValue.textContent = value < 30 ? "Clean" : value < 70 ? "Sparkly" : "Alien";
+    updateMagic();
+  });
 
-  padSurface.addEventListener("pointerdown", handlePointerDown);
-  padSurface.addEventListener("pointermove", handlePointerMove);
-  padSurface.addEventListener("pointerup", handlePointerUp);
-  padSurface.addEventListener("pointercancel", handlePointerUp);
+  window.addEventListener("blur", () => {
+    stopAll();
+  });
 
-  padSurface.addEventListener("touchstart", handleTouchStart, { passive: false });
-  padSurface.addEventListener("touchmove", handleTouchMove, { passive: false });
-  padSurface.addEventListener("touchend", handleTouchEnd, { passive: false });
-  padSurface.addEventListener("touchcancel", handleTouchEnd, { passive: false });
-
-  window.addEventListener("blur", panic);
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden) panic();
+    if (document.hidden) stopAll();
   });
 
   tempoValue.textContent = String(bpm);
-  setupPads();
-  tickDiagnostics();
-  setInterval(tickDiagnostics, 33);
+  app.style.setProperty("--beat", `${60 / bpm}s`);
+  updateMagic();
 })();
 </script>
 </body>
