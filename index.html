@@ -19,11 +19,7 @@
     margin: 0;
     padding: 0;
     height: 100%;
-    background:
-      radial-gradient(circle at 20% 15%, rgba(0,229,255,0.08), transparent 45%),
-      radial-gradient(circle at 80% 25%, rgba(255,45,255,0.08), transparent 45%),
-      radial-gradient(circle at 50% 85%, rgba(124,255,78,0.07), transparent 50%),
-      var(--bg);
+    background: #000000;
     color: var(--ink);
     font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     overflow: hidden;
@@ -76,7 +72,7 @@
 
   .layout {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(280px, 1fr) minmax(260px, 320px);
     gap: 20px;
     align-items: center;
     max-width: 980px;
@@ -98,6 +94,7 @@
     box-shadow:
       inset 0 2px 3px rgba(255,255,255,0.08),
       inset 0 -10px 18px rgba(0,0,0,0.7),
+      0 0 20px var(--glow),
       0 12px 20px rgba(0,0,0,0.6);
     display: grid;
     place-items: center;
@@ -118,7 +115,7 @@
     background:
       linear-gradient(180deg, rgba(0,0,0,0.8), rgba(0,0,0,0.2)),
       linear-gradient(180deg, var(--glow), rgba(0,0,0,0.2));
-    opacity: 0.85;
+    opacity: 1;
     z-index: -1;
   }
   .chord-btn::before {
@@ -153,6 +150,7 @@
     box-shadow:
       inset 0 2px 3px rgba(255,255,255,0.08),
       inset 0 -6px 12px rgba(0,0,0,0.7),
+      0 0 32px var(--glow),
       0 6px 16px rgba(0,0,0,0.55);
     animation: glowBreath 2.2s ease-in-out infinite;
   }
@@ -274,15 +272,39 @@
     .tempo-dot, .groove-wobble, .magic-shimmer { animation: none; }
   }
   @media (max-width: 980px) {
+    .layout { grid-template-columns: 1fr; }
     .side-panel { width: min(100%, 520px); margin: 0 auto; }
   }
   .chord-grid .chord-btn:nth-child(4n+1) { --glow: #ff1b7a; }
   .chord-grid .chord-btn:nth-child(4n+2) { --glow: #2f3aa8; }
   .chord-grid .chord-btn:nth-child(4n+3) { --glow: #f2ff5a; }
   .chord-grid .chord-btn:nth-child(4n+4) { --glow: #7fb4ff; }
+  .particle-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+  }
+  .particle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--pcolor);
+    opacity: 0;
+    transform: translate3d(0,0,0) scale(0.6);
+    will-change: transform, opacity;
+    box-shadow: 0 0 12px var(--pcolor);
+  }
+  .app {
+    position: relative;
+    z-index: 1;
+  }
 </style>
 </head>
 <body>
+  <div class="particle-layer" id="particles"></div>
   <div class="app" id="app">
     <header>
       <div class="title">Pop Parts for Kids</div>
@@ -293,6 +315,17 @@
     </header>
 
     <div class="layout">
+      <div class="chord-grid" id="chordGrid">
+        <button class="chord-btn" data-chord="C"><span class="label">C</span><span class="hint">Happy</span><span class="pulse-ring"></span></button>
+        <button class="chord-btn" data-chord="G"><span class="label">G</span><span class="hint">Bright</span><span class="pulse-ring"></span></button>
+        <button class="chord-btn" data-chord="Am"><span class="label">Am</span><span class="hint">Dreamy</span><span class="pulse-ring"></span></button>
+        <button class="chord-btn" data-chord="F"><span class="label">F</span><span class="hint">Warm</span><span class="pulse-ring"></span></button>
+        <button class="chord-btn" data-chord="Dm"><span class="label">Dm</span><span class="hint">Soft</span><span class="pulse-ring"></span></button>
+        <button class="chord-btn" data-chord="Em"><span class="label">Em</span><span class="hint">Cool</span><span class="pulse-ring"></span></button>
+        <button class="chord-btn" data-chord="G/B"><span class="label">G/B</span><span class="hint">Lift</span><span class="pulse-ring"></span></button>
+        <button class="chord-btn" data-chord="C/E"><span class="label">C/E</span><span class="hint">Glow</span><span class="pulse-ring"></span></button>
+      </div>
+
       <div class="side-panel">
         <div class="microcopy">? Hold a chord to hear it evolve.</div>
 
@@ -334,17 +367,6 @@
           <div class="indicator"><span class="magic-shimmer"></span> Sparkle</div>
         </div>
       </div>
-
-      <div class="chord-grid" id="chordGrid">
-        <button class="chord-btn" data-chord="C"><span class="label">C</span><span class="hint">Happy</span><span class="pulse-ring"></span></button>
-        <button class="chord-btn" data-chord="G"><span class="label">G</span><span class="hint">Bright</span><span class="pulse-ring"></span></button>
-        <button class="chord-btn" data-chord="Am"><span class="label">Am</span><span class="hint">Dreamy</span><span class="pulse-ring"></span></button>
-        <button class="chord-btn" data-chord="F"><span class="label">F</span><span class="hint">Warm</span><span class="pulse-ring"></span></button>
-        <button class="chord-btn" data-chord="Dm"><span class="label">Dm</span><span class="hint">Soft</span><span class="pulse-ring"></span></button>
-        <button class="chord-btn" data-chord="Em"><span class="label">Em</span><span class="hint">Cool</span><span class="pulse-ring"></span></button>
-        <button class="chord-btn" data-chord="G/B"><span class="label">G/B</span><span class="hint">Lift</span><span class="pulse-ring"></span></button>
-        <button class="chord-btn" data-chord="C/E"><span class="label">C/E</span><span class="hint">Glow</span><span class="pulse-ring"></span></button>
-      </div>
     </div>
   </div>
 
@@ -363,6 +385,7 @@
   const magicSlider = document.getElementById("magicSlider");
   const magicValue = document.getElementById("magicValue");
   const app = document.getElementById("app");
+  const particlesLayer = document.getElementById("particles");
 
   let audioCtx = null;
   let masterGain = null;
@@ -386,6 +409,8 @@
   let schedulerTimer = null;
   let nextStepTime = 0;
   let stepIndex = 0;
+  const particles = new Set();
+  let particleRaf = null;
 
   const chordMap = {
     "C": [60, 64, 67, 72],
@@ -480,6 +505,53 @@
     if (saturator) saturator.curve = makeSaturationCurve(drive);
     if (delaySend) delaySend.gain.value = 0.05 + magic * 0.08;
     app.style.setProperty("--magic", magic.toFixed(2));
+  }
+
+  function spawnParticles(x, y, color) {
+    const count = 36;
+    for (let i = 0; i < count; i++) {
+      const el = document.createElement("div");
+      el.className = "particle";
+      el.style.setProperty("--pcolor", color);
+      particlesLayer.appendChild(el);
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 40 + Math.random() * 180;
+      const life = 500 + Math.random() * 600;
+      const particle = {
+        el,
+        start: performance.now(),
+        duration: life,
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        spin: (Math.random() - 0.5) * 4
+      };
+      particles.add(particle);
+    }
+    if (!particleRaf) {
+      particleRaf = requestAnimationFrame(tickParticles);
+    }
+  }
+
+  function tickParticles(now) {
+    particles.forEach((p) => {
+      const t = (now - p.start) / p.duration;
+      if (t >= 1) {
+        p.el.remove();
+        particles.delete(p);
+        return;
+      }
+      const driftX = p.vx * t;
+      const driftY = p.vy * t + t * t * 40;
+      p.el.style.opacity = String(1 - t);
+      p.el.style.transform = `translate3d(${p.x + driftX}px, ${p.y + driftY}px, 0) scale(${0.6 + t}) rotate(${p.spin * t}rad)`;
+    });
+    if (particles.size) {
+      particleRaf = requestAnimationFrame(tickParticles);
+    } else {
+      particleRaf = null;
+    }
   }
 
   function createNoiseBurst(time, duration, gainValue, freq) {
@@ -691,6 +763,8 @@
     button.addEventListener("pointerdown", (e) => {
       ensureAudio();
       button.setPointerCapture(e.pointerId);
+      const color = getComputedStyle(button).getPropertyValue("--glow").trim() || "#ffffff";
+      spawnParticles(e.clientX, e.clientY, color);
       setActiveChord(button, button.dataset.chord);
       startBeat();
     });
