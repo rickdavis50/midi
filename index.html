@@ -76,9 +76,11 @@
 
   .layout {
     display: grid;
-    grid-template-columns: minmax(280px, 1fr) minmax(260px, 320px);
+    grid-template-columns: 1fr;
     gap: 20px;
     align-items: center;
+    max-width: 980px;
+    margin: 0 auto;
   }
 
   .chord-grid {
@@ -272,9 +274,12 @@
     .tempo-dot, .groove-wobble, .magic-shimmer { animation: none; }
   }
   @media (max-width: 980px) {
-    .layout { grid-template-columns: 1fr; }
-    .side-panel { width: min(100%, 420px); margin: 0 auto; }
+    .side-panel { width: min(100%, 520px); margin: 0 auto; }
   }
+  .chord-grid .chord-btn:nth-child(4n+1) { --glow: #ff1b7a; }
+  .chord-grid .chord-btn:nth-child(4n+2) { --glow: #2f3aa8; }
+  .chord-grid .chord-btn:nth-child(4n+3) { --glow: #f2ff5a; }
+  .chord-grid .chord-btn:nth-child(4n+4) { --glow: #7fb4ff; }
 </style>
 </head>
 <body>
@@ -288,17 +293,6 @@
     </header>
 
     <div class="layout">
-      <div class="chord-grid" id="chordGrid">
-        <button class="chord-btn" data-chord="C" style="--glow: #00e5ff;"><span class="label">C</span><span class="hint">Happy</span><span class="pulse-ring"></span></button>
-        <button class="chord-btn" data-chord="G" style="--glow: #2dfcff;"><span class="label">G</span><span class="hint">Bright</span><span class="pulse-ring"></span></button>
-        <button class="chord-btn" data-chord="Am" style="--glow: #4d7dff;"><span class="label">Am</span><span class="hint">Dreamy</span><span class="pulse-ring"></span></button>
-        <button class="chord-btn" data-chord="F" style="--glow: #ff2dff;"><span class="label">F</span><span class="hint">Warm</span><span class="pulse-ring"></span></button>
-        <button class="chord-btn" data-chord="Dm" style="--glow: #7CFF4E;"><span class="label">Dm</span><span class="hint">Soft</span><span class="pulse-ring"></span></button>
-        <button class="chord-btn" data-chord="Em" style="--glow: #00ffa6;"><span class="label">Em</span><span class="hint">Cool</span><span class="pulse-ring"></span></button>
-        <button class="chord-btn" data-chord="G/B" style="--glow: #ffd24a;"><span class="label">G/B</span><span class="hint">Lift</span><span class="pulse-ring"></span></button>
-        <button class="chord-btn" data-chord="C/E" style="--glow: #ff9a4a;"><span class="label">C/E</span><span class="hint">Glow</span><span class="pulse-ring"></span></button>
-      </div>
-
       <div class="side-panel">
         <div class="microcopy">? Hold a chord to hear it evolve.</div>
 
@@ -339,6 +333,17 @@
           <input id="magicSlider" type="range" min="0" max="100" value="10" />
           <div class="indicator"><span class="magic-shimmer"></span> Sparkle</div>
         </div>
+      </div>
+
+      <div class="chord-grid" id="chordGrid">
+        <button class="chord-btn" data-chord="C"><span class="label">C</span><span class="hint">Happy</span><span class="pulse-ring"></span></button>
+        <button class="chord-btn" data-chord="G"><span class="label">G</span><span class="hint">Bright</span><span class="pulse-ring"></span></button>
+        <button class="chord-btn" data-chord="Am"><span class="label">Am</span><span class="hint">Dreamy</span><span class="pulse-ring"></span></button>
+        <button class="chord-btn" data-chord="F"><span class="label">F</span><span class="hint">Warm</span><span class="pulse-ring"></span></button>
+        <button class="chord-btn" data-chord="Dm"><span class="label">Dm</span><span class="hint">Soft</span><span class="pulse-ring"></span></button>
+        <button class="chord-btn" data-chord="Em"><span class="label">Em</span><span class="hint">Cool</span><span class="pulse-ring"></span></button>
+        <button class="chord-btn" data-chord="G/B"><span class="label">G/B</span><span class="hint">Lift</span><span class="pulse-ring"></span></button>
+        <button class="chord-btn" data-chord="C/E"><span class="label">C/E</span><span class="hint">Glow</span><span class="pulse-ring"></span></button>
       </div>
     </div>
   </div>
