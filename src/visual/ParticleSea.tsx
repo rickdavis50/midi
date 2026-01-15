@@ -54,6 +54,8 @@ const createShader = () => {
       uniform float uWaveSpeed;
       uniform float uGroove;
       uniform float uSparkle;
+      uniform float uEnergy;
+      uniform float uBeatPhase;
       uniform float uDepth;
       uniform vec4 uImpactData[${IMPACT_LIMIT}];
       uniform vec4 uImpactParams[${IMPACT_LIMIT}];
@@ -64,10 +66,10 @@ const createShader = () => {
       varying float vDepthFade;
 
       float waveField(vec2 pos, float time) {
-        float wave1 = sin(pos.x * 0.12 + time * 0.6);
-        float wave2 = cos(pos.y * 0.15 - time * 0.45);
-        float wave3 = sin((pos.x + pos.y) * 0.08 + time * 0.3);
-        return (wave1 + wave2 + wave3) * 0.35;
+        float wave1 = sin(pos.x * 0.08 + time * 0.35);
+        float wave2 = cos(pos.y * 0.09 - time * 0.28);
+        float wave3 = sin((pos.x + pos.y) * 0.05 + time * 0.2);
+        return (wave1 + wave2 + wave3) * 0.28;
       }
 
       void main() {
@@ -91,8 +93,9 @@ const createShader = () => {
           }
         }
 
-        float grooveNoise = sin(base.x * 0.24 + uTime * 1.2 + aSeed * 6.0) * 0.15;
-        float height = (baseWave + ripple) * uWaveAmp + grooveNoise * uGroove;
+        float beatPulse = sin(uBeatPhase * 6.283185) * 0.15;
+        float grooveNoise = sin(base.x * 0.18 + uTime * 0.4 + aSeed * 4.0) * 0.08;
+        float height = (baseWave + ripple) * uWaveAmp + (grooveNoise + beatPulse) * uGroove * (0.35 + uEnergy);
 
         vec3 displaced = vec3(base.x, height, base.z);
         vec4 mvPosition = modelViewMatrix * vec4(displaced, 1.0);
@@ -100,11 +103,11 @@ const createShader = () => {
         vScreen = clip.xy / clip.w;
         vDepthFade = smoothstep(-uDepth * 0.5, uDepth * 0.5, base.z);
 
-        float sparkle = smoothstep(0.9 - uSparkle * 0.35, 1.0, fract(sin(aSeed * 91.7 + uTime * 3.2) * 43758.5453));
-        vIntensity = clamp(0.4 + height * 0.4 + glowBoost + sparkle * 0.5, 0.0, 1.5);
+        float sparkle = smoothstep(0.9 - uSparkle * 0.35, 1.0, fract(sin(aSeed * 91.7 + uTime * 1.6) * 43758.5453));
+        vIntensity = clamp(0.45 + height * 0.35 + glowBoost + sparkle * 0.35 + uEnergy * 0.35, 0.0, 1.35);
         vColorMix = vec3(0.6 + baseWave * 0.2, 0.7, 1.0);
 
-        gl_PointSize = (2.0 + aSeed * 2.5 + vIntensity * 6.0) * (220.0 / -mvPosition.z);
+        gl_PointSize = (2.2 + aSeed * 2.4 + vIntensity * 5.2) * (240.0 / -mvPosition.z);
         gl_Position = clip;
       }
     `,
@@ -121,22 +124,27 @@ const createShader = () => {
       void main() {
         vec2 uv = gl_PointCoord - 0.5;
         float dist = length(uv);
-        float core = smoothstep(0.5, 0.0, dist);
-        float halo = smoothstep(0.7, 0.0, dist);
-        float glow = core + halo * 0.6;
+        if (dist > 0.5) discard;
+        float z = sqrt(0.25 - dist * dist);
+        vec3 normal = normalize(vec3(uv, z));
+        vec3 lightDir = normalize(vec3(-0.3, 0.4, 0.85));
+        float diffuse = max(dot(normal, lightDir), 0.0);
+        float spec = pow(max(dot(reflect(-lightDir, normal), vec3(0.0, 0.0, 1.0)), 0.0), 12.0);
+        float core = smoothstep(0.5, 0.05, dist);
+        float glow = core * 0.9 + spec * 0.7;
 
         vec2 screenUv = vScreen * 0.5 + 0.5;
         float vignette = smoothstep(0.85, 0.25, distance(screenUv, vec2(0.5)));
         float topFade = smoothstep(0.0, 0.6, 1.0 - screenUv.y);
 
         vec3 baseColor = mix(uColorA, uColorB, vColorMix.x);
-        vec3 color = baseColor * vIntensity;
+        vec3 color = baseColor * (0.65 + diffuse * 0.55 + spec * 0.6) * vIntensity;
         color *= glow;
         color *= mix(1.0, vignette, uVignette);
         color *= topFade * (0.65 + vDepthFade * 0.35);
 
-        float alpha = glow * 0.9;
-        if (alpha < 0.02) discard;
+        float alpha = clamp(glow * (0.55 + diffuse * 0.6), 0.0, 1.0);
+        if (alpha < 0.04) discard;
         gl_FragColor = vec4(color, alpha);
       }
     `
@@ -155,11 +163,11 @@ export default function ParticleSea({ className }: ParticleSeaProps) {
     const container = containerRef.current
     if (!container) return undefined
 
-    const maxTarget = isMobile() ? 12000 : 30000
-    const gridSize = Math.floor(Math.sqrt(maxTarget))
-    const maxCount = gridSize * gridSize
-    const baseWidth = 70
-    const baseDepth = 70
+  const maxTarget = isMobile() ? 18000 : 42000
+  const gridSize = Math.floor(Math.sqrt(maxTarget))
+  const maxCount = gridSize * gridSize
+  const baseWidth = 120
+  const baseDepth = 120
     const depth = baseDepth
     const width = baseWidth * (window.innerWidth / window.innerHeight)
     const { data: impactData, params: impactParams } = buildImpactUniforms()
@@ -192,6 +200,8 @@ export default function ParticleSea({ className }: ParticleSeaProps) {
       uWaveSpeed: { value: 0.55 },
       uGroove: { value: 0.15 },
       uSparkle: { value: 0.2 },
+      uEnergy: { value: 0 },
+      uBeatPhase: { value: 0 },
       uDepth: { value: depth },
       uColorA: { value: new THREE.Color(0.2, 0.6, 1) },
       uColorB: { value: new THREE.Color(0.9, 0.4, 0.9) },
@@ -215,13 +225,13 @@ export default function ParticleSea({ className }: ParticleSeaProps) {
     scene.add(points)
 
     const camera = new THREE.PerspectiveCamera(
-      42,
+      34,
       window.innerWidth / window.innerHeight,
       0.1,
-      200
+      280
     )
-    camera.position.set(0, 18, 36)
-    camera.lookAt(0, 0, -8)
+    camera.position.set(0, 24, 65)
+    camera.lookAt(0, 0, -18)
 
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, qualityRef.current.dprMax))
@@ -241,6 +251,9 @@ export default function ParticleSea({ className }: ParticleSeaProps) {
     let lastTime = performance.now()
     let lastRain = 0
     const perf = new FpsMonitor()
+    let energy = 0
+    let bpm = 120
+    let lastNoteAt = 0
 
     const applyQuality = (action: 'decrease' | 'increase' | 'hold') => {
       if (action === 'decrease') {
@@ -308,22 +321,27 @@ export default function ParticleSea({ className }: ParticleSeaProps) {
         const color = noteToColor(event.note)
         targetPalette = new THREE.Color(color[0], color[1], color[2])
         paletteBlend = 0
+        energy = clamp(energy + strength * 0.6, 0, 2)
+        lastNoteAt = performance.now()
       }
       if (event.type === 'NOTE_OFF') {
         const point = mapNoteToSurface(event.note)
         addImpact(point.x, point.z, 0.6, 6)
+        energy = clamp(energy + 0.1, 0, 2)
       }
       if (event.type === 'CHORD_CHANGE') {
         const color = chordToColor(event.chordName)
         targetPalette = new THREE.Color(color[0], color[1], color[2])
         paletteBlend = 0
-        uniforms.uWaveAmp.value = 2.2
+        uniforms.uWaveAmp.value = 2.4
+        energy = clamp(energy + 0.5, 0, 2)
       }
       if (event.type === 'TEMPO_CHANGE') {
-        uniforms.uWaveSpeed.value = clamp(event.bpm / 140, 0.35, 1.2)
+        bpm = event.bpm
+        uniforms.uWaveSpeed.value = clamp(event.bpm / 140, 0.35, 1.1)
       }
       if (event.type === 'GROOVE_CHANGE') {
-        uniforms.uGroove.value = clamp(event.amount * 0.6, 0.05, 0.6)
+        uniforms.uGroove.value = clamp(event.amount * 0.55, 0.04, 0.5)
       }
       if (event.type === 'DENSITY_CHANGE') {
         const targetCount = Math.floor(maxCount * (0.35 + event.amount * 0.65))
@@ -332,7 +350,7 @@ export default function ParticleSea({ className }: ParticleSeaProps) {
         qualityRef.current.activeCount = activeCount
       }
       if (event.type === 'MAGIC_CHANGE') {
-        uniforms.uSparkle.value = clamp(event.amount * 0.8, 0.1, 0.95)
+        uniforms.uSparkle.value = clamp(event.amount * 0.7, 0.08, 0.75)
       }
       if (event.type === 'PANIC') {
         addImpact(0, 0, 2.2, 18)
@@ -340,6 +358,7 @@ export default function ParticleSea({ className }: ParticleSeaProps) {
         targetPalette = new THREE.Color(0.9, 0.4, 0.9)
         paletteBlend = 0
         uniforms.uWaveAmp.value = 1.6
+        energy = 0.4
       }
     })
 
@@ -349,6 +368,9 @@ export default function ParticleSea({ className }: ParticleSeaProps) {
       lastTime = now
       const time = now / 1000
       uniforms.uTime.value = time
+      uniforms.uBeatPhase.value = ((time * bpm) / 60) % 1
+      energy = Math.max(0, energy - delta * 0.4)
+      uniforms.uEnergy.value = energy
       perf.tick(now)
       applyQuality(perf.getAction())
 
@@ -369,11 +391,12 @@ export default function ParticleSea({ className }: ParticleSeaProps) {
       }
 
       if (uniforms.uWaveAmp.value > 1.8) {
-        uniforms.uWaveAmp.value = Math.max(1.8, uniforms.uWaveAmp.value - delta * 0.4)
+        uniforms.uWaveAmp.value = Math.max(1.8, uniforms.uWaveAmp.value - delta * 0.35)
       }
 
-      const raininess = uniforms.uGroove.value + uniforms.uSparkle.value
-      if (raininess > 0.9 && now - lastRain > 320) {
+      const timeSinceNote = now - lastNoteAt
+      const raininess = uniforms.uGroove.value + uniforms.uSparkle.value + energy * 0.4
+      if (raininess > 0.9 && timeSinceNote < 2400 && now - lastRain > 420) {
         lastRain = now
         const rx = (Math.random() - 0.5) * width
         const rz = (Math.random() - 0.5) * depth
