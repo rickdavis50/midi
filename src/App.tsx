@@ -457,9 +457,10 @@ function App() {
   const densityLevel = density < 25 ? '1' : density < 50 ? '2' : density < 75 ? '3' : '4'
 
   return (
-    <>
-      <ParticleSea />
-      <div className="app-shell relative z-10 min-h-screen w-full bg-[radial-gradient(circle_at_top,_rgba(54,64,120,0.55),_rgba(5,6,10,0.95)_55%),_linear-gradient(120deg,_rgba(8,15,28,0.9),_rgba(2,2,6,1))] px-5 py-6 text-ink">
+    <div className="app-shell relative min-h-screen w-full px-5 py-6 text-ink">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,_rgba(54,64,120,0.55),_rgba(5,6,10,0.95)_55%),_linear-gradient(120deg,_rgba(8,15,28,0.9),_rgba(2,2,6,1))]" />
+      <ParticleSea className="pointer-events-none absolute inset-0 z-0 h-full w-full" />
+      <div className="relative z-10">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4">
           <div className="text-lg font-semibold uppercase tracking-[0.2em]">
             Pop Parts for Kids
@@ -590,7 +591,7 @@ function App() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   )
 }
 

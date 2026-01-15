@@ -143,7 +143,11 @@ const createShader = () => {
   }
 }
 
-export default function ParticleSea() {
+type ParticleSeaProps = {
+  className?: string
+}
+
+export default function ParticleSea({ className }: ParticleSeaProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const qualityRef = useRef<QualityState>({ activeCount: 0, dprMax: 1.5 })
 
@@ -403,5 +407,12 @@ export default function ParticleSea() {
     }
   }, [])
 
-  return <div ref={containerRef} className="fixed inset-0 -z-10 h-full w-full pointer-events-none" />
+  return (
+    <div
+      ref={containerRef}
+      className={
+        className ?? 'fixed inset-0 -z-10 h-full w-full pointer-events-none'
+      }
+    />
+  )
 }
