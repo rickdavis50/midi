@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import ParticleSea from './visual/ParticleSea'
+import HardwarePads3D from './visual/HardwarePads3D'
 import { emitVisual } from './visual/visualBus'
 
 type Chord = {
@@ -408,7 +409,7 @@ function App() {
     store.currentChordVoice = null
     store.currentChordName = null
     setActiveChord(null)
-    emitVisual({ type: 'NOTE_OFF', note: chord.notes[0] })
+    emitVisual({ type: 'NOTE_OFF', note: chord.notes[0], velocity: 0.3, chordId: chord.name })
   }
 
   function handleUnlock() {
@@ -460,6 +461,7 @@ function App() {
     <div className="app-shell relative min-h-screen w-full px-5 py-6 text-ink">
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,_rgba(54,64,120,0.55),_rgba(5,6,10,0.95)_55%),_linear-gradient(120deg,_rgba(8,15,28,0.9),_rgba(2,2,6,1))]" />
       <ParticleSea className="pointer-events-none absolute inset-0 z-0 h-full w-full" />
+      <HardwarePads3D />
       <div className="relative z-10">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4">
           <div className="text-lg font-semibold uppercase tracking-[0.2em]">

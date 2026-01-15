@@ -1,6 +1,6 @@
 export type VisualEvent =
   | { type: 'NOTE_ON'; note: number; velocity: number; channel?: number; chordId?: string }
-  | { type: 'NOTE_OFF'; note: number; velocity?: number }
+  | { type: 'NOTE_OFF'; note: number; velocity?: number; chordId?: string }
   | { type: 'CHORD_CHANGE'; chordName: string }
   | { type: 'TEMPO_CHANGE'; bpm: number }
   | { type: 'GROOVE_CHANGE'; amount: number }
