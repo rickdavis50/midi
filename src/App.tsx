@@ -66,6 +66,10 @@ function App() {
   const [magic, setMagic] = useState(10)
   const [activeChord, setActiveChord] = useState<string | null>(null)
   const audioRef = useRef<AudioStore>(createAudioStore())
+  const bpmRef = useRef(bpm)
+  const grooveRef = useRef(groove)
+  const densityRef = useRef(density)
+  const magicRef = useRef(magic)
 
   const chordMap = useMemo(() => {
     const map: Record<string, number[]> = {}
@@ -77,10 +81,12 @@ function App() {
 
   useEffect(() => {
     document.documentElement.style.setProperty('--beat', `${60 / bpm}s`)
+    bpmRef.current = bpm
   }, [bpm])
 
   useEffect(() => {
     document.documentElement.style.setProperty('--magic', (magic / 100).toFixed(2))
+    magicRef.current = magic
   }, [magic])
 
   function ensureAudio() {
@@ -209,20 +215,23 @@ function App() {
 
     const lfo = audioCtx.createOscillator()
     const lfoGain = audioCtx.createGain()
-    lfo.frequency.value = 0.35 + (magic / 100) * 0.6
-    lfoGain.gain.value = 60 + (magic / 100) * 120
+    lfo.frequency.value = 0.35 + (magicRef.current / 100) * 0.6
+    lfoGain.gain.value = 60 + (magicRef.current / 100) * 120
     lfo.connect(lfoGain)
     lfoGain.connect(filter.frequency)
 
     const shimmerGain = audioCtx.createGain()
     shimmerGain.gain.setValueAtTime(0.0001, now + 1.5)
-    shimmerGain.gain.linearRampToValueAtTime(0.12 + (magic / 100) * 0.18, now + 3)
+    shimmerGain.gain.linearRampToValueAtTime(
+      0.12 + (magicRef.current / 100) * 0.18,
+      now + 3
+    )
 
     const nodes = notes.map((midi, i) => {
       const osc = audioCtx.createOscillator()
       const osc2 = audioCtx.createOscillator()
       const pan = audioCtx.createStereoPanner()
-      const detune = (i % 2 === 0 ? -6 : 6) * (1 + (magic / 100) * 0.5)
+      const detune = (i % 2 === 0 ? -6 : 6) * (1 + (magicRef.current / 100) * 0.5)
       osc.type = 'triangle'
       osc.frequency.value = midiToFreq(midi)
       osc.detune.value = detune
@@ -311,7 +320,7 @@ function App() {
     filter.type = 'highpass'
     filter.frequency.value = 5200
     const gain = store.audioCtx.createGain()
-    gain.gain.setValueAtTime(0.08 + (density / 100) * 0.08, time)
+    gain.gain.setValueAtTime(0.08 + (densityRef.current / 100) * 0.08, time)
     gain.gain.exponentialRampToValueAtTime(0.0001, time + length)
     noise.connect(filter)
     filter.connect(gain)
@@ -324,15 +333,16 @@ function App() {
     const store = audioRef.current
     if (!store.audioCtx) return
     const scheduleAhead = 0.15
-    const stepDur = (60 / bpm) / 4
-    const swingAmount = 0.5 + (groove / 100) * 0.12
+    const stepDur = (60 / bpmRef.current) / 4
+    const swingAmount = 0.5 + (grooveRef.current / 100) * 0.12
 
     while (store.nextStepTime < store.audioCtx.currentTime + scheduleAhead) {
       const step = store.stepIndex % 16
       const beat = step % 4
       const time = store.nextStepTime
 
-      const kickOn1 = density / 100 > 0.25
+      const densityAmount = densityRef.current / 100
+      const kickOn1 = densityAmount > 0.25
       if (step === 0 || (kickOn1 && step === 8)) {
         playKick(time)
       }
@@ -340,14 +350,14 @@ function App() {
         playSnare(time)
       }
       const swingOffset = step % 2 === 1 ? (swingAmount - 0.5) * stepDur : 0
-      if (step % 2 === 0 || density / 100 > 0.35) {
-        const hatLen = density / 100 > 0.6 ? 0.14 : 0.08
+      if (step % 2 === 0 || densityAmount > 0.35) {
+        const hatLen = densityAmount > 0.6 ? 0.14 : 0.08
         playHat(time + swingOffset, hatLen)
       }
-      if (density / 100 > 0.7 && beat === 3) {
+      if (densityAmount > 0.7 && beat === 3) {
         playHat(time + swingOffset + stepDur * 0.5, 0.05)
       }
-      if (density / 100 > 0.8 && step === 14) {
+      if (densityAmount > 0.8 && step === 14) {
         playSnare(time + 0.01)
       }
 
@@ -522,7 +532,11 @@ function App() {
                   min="80"
                   max="160"
                   value={bpm}
-                  onChange={(event) => setBpm(Number(event.target.value))}
+                  onChange={(event) => {
+                    const value = Number(event.target.value)
+                    bpmRef.current = value
+                    setBpm(value)
+                  }}
                   className="w-full accent-cyan-300"
                 />
                 <div className="flex items-center gap-2 text-xs text-muted">
@@ -541,7 +555,11 @@ function App() {
                   min="0"
                   max="100"
                   value={groove}
-                  onChange={(event) => setGroove(Number(event.target.value))}
+                  onChange={(event) => {
+                    const value = Number(event.target.value)
+                    grooveRef.current = value
+                    setGroove(value)
+                  }}
                   className="w-full accent-fuchsia-400"
                 />
                 <div className="flex items-center gap-2 text-xs text-muted">
@@ -560,7 +578,11 @@ function App() {
                   min="0"
                   max="100"
                   value={density}
-                  onChange={(event) => setDensity(Number(event.target.value))}
+                  onChange={(event) => {
+                    const value = Number(event.target.value)
+                    densityRef.current = value
+                    setDensity(value)
+                  }}
                   className="w-full accent-lime-300"
                 />
                 <div className="density-dots text-xs text-muted" data-level={densityLevel}>
@@ -581,7 +603,11 @@ function App() {
                   min="0"
                   max="100"
                   value={magic}
-                  onChange={(event) => setMagic(Number(event.target.value))}
+                  onChange={(event) => {
+                    const value = Number(event.target.value)
+                    magicRef.current = value
+                    setMagic(value)
+                  }}
                   className="w-full accent-amber-300"
                 />
                 <div className="flex items-center gap-2 text-xs text-muted">
